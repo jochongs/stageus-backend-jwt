@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width" />
+    <link rel="stylesheet" href="/public/css/index.css">
+    <link rel="stylesheet" href="/public/css/header.css">
+    <link rel="stylesheet" href="/public/css/layout.css">
+    <title>백엔드 심화</title>
+</head>
+<body>
+    <header>
+        <div class="header_container">
+            <div class="page_name_container">
+                <h1 onclick="moveMainPage()">백엔드</h1>
+            </div>
+            <nav>
+                <button class="nav_login_btn" onclick="moveLoginPage()">로그인</button>
+                <button class="nav_logout_btn hidden" onclick="clickLogoutBtnEvent()">로그아웃</button>
+                <button class="user_info_btn hidden" onclick="clickUserInfoBtnEvent()"> <img class="open_user_info_icon hidden" src="/public/source/icon/bottom_triangle_icon.svg" alt=""></button>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="write_post_section hidden">
+            <div class="write_post_container">
+                <div class="title_input_container">
+                    <input type="text" class="post_title_input" id="title" placeholder="제목을 입력하세요." maxlength="32">
+                </div>
+                <div class="contents_input_container">
+                    <textarea id="contents" class="post_contents_input" placeholder="내용을 입력하세요"></textarea>
+                </div>
+                <div class="post_img_input_container">
+                    <input type="file" class="post_img_input" multiple accept=".jpg, .png">
+                </div>
+                <div class="submit_btn_container">
+                    <button onclick="clickWriteBtnEvent()" class="post_submit_btn">입력 완료</button>
+                </div>
+            </div>
+        </section>
+        <section class="board_section">
+            <div class="board_container">
+                <div class="post_column_name_container">
+                    <div class="post_idx_container">
+                        번호
+                    </div>
+                    <div class="post_title_container">
+                        글 제목
+                    </div>
+                    <div class="post_author_container">
+                        작성자
+                    </div>
+                    <div class="post_date_container">
+                        작성일
+                    </div>
+                </div>
+                <div class="post_container">
+                    <!-- <div class="post_item">
+                        <div class="post_item_idx_container">
+                            11  
+                        </div>
+                        <div class="post_item_title_container">
+                            아니 이거 진짜 말이 안된다니까요? 님들이 보셧어요??
+                        </div>
+                        <div class="post_item_author_container">
+                            조총이
+                        </div>
+                        <div class="post_item_date_container">
+                            2022-10-10
+                        </div>
+                    </div> -->
+                </div>
+            </div>            
+        </section>
+    </main>
+    <script src="/public/js/move_page.js"></script>
+    <script src="/public/js/index.js"></script>
+    <script src="/public/js/post_write.js"></script>
+    <script src="/public/js/header.js"></script>
+</body>
+</html>

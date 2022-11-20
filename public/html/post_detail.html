@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width" />
+    <link rel="stylesheet" href="/public/css/header.css">
+    <link rel="stylesheet" href="/public/css/post_detail.css">
+    <link rel="stylesheet" href="/public/css/layout.css">
+    <title>포스트 디테일</title>
+</head>
+<body>
+    <header>
+        <div class="header_container">
+            <div class="page_name_container">
+                <h1 onclick="moveMainPage()">백엔드</h1>
+            </div>
+            <nav>
+                <button class="nav_login_btn" onclick="moveLoginPage()">로그인</button>
+                <button class="nav_logout_btn hidden" onclick="clickLogoutBtnEvent()">로그아웃</button>
+                <button class="user_info_btn hidden" onclick="clickUserInfoBtnEvent()"> <img class="open_user_info_icon hidden" src="/public/source/icon/bottom_triangle_icon.svg" alt=""></button>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="post_detail_section">
+            <div class="post_detail_container">
+                <div class="title_container">
+                </div>
+                <div class="author_btn_container">
+                    <div class="author_container">
+                
+                    </div>
+                    <div class="date_container">
+                        
+                    </div>
+                    <div class="post_detail_btn_container hidden">
+                        <button class="post_delete_btn" onclick="clickDeletePostBtnEvent()">삭제</button>
+                        <button class="post_modify_btn" onclick="clickModifyPostBtnEvent()">수정</button>
+                    </div>    
+                </div>
+                
+                <div class="contents_container">
+
+                </div>
+            </div>
+        </section>
+        <section class="comment_section">
+            <div class="comment_container">
+                <div class="input_container hidden">
+                    <input type="text" placeholder="댓글을 입력하세요" id="comment">
+                    <button class="comment_submit_btn" onclick="clickCommentSubmitBtnEvent()">완료</button>
+                </div>
+                <!-- <div class="comment_item">
+                    <div class="comment_contents">asdf</div>
+                    <div class="comment_author_date_container">
+                        <div class="comment_author">조총이</div>
+                        <div class="comment_date">2022-10-02</div>
+                        <button data-comment-idx="2" class="comment_delete_btn">삭제</button>
+                        <button data-comment-idx="2" class="comment_modify_btn">수정</button>
+                    </div>
+                </div> -->
+            </div>
+        </section>
+    </main>
+    <div class="wrap">
+        
+    </div>
+    <script src="/public/js/post_detail.js"></script>
+    <script src="/public/js/move_page.js"></script>
+    <script src="/public/js/header.js"></script>
+</body>
+</html>

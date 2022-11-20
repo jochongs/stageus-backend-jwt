@@ -1,0 +1,67 @@
+/* 로그인 리팩토링 ========================================================= */
+.login_container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 360px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+
+    /* 곧 삭제 */
+    margin: 0 auto; 
+    margin-top: 100px;
+}
+.login_input_container{
+    width: calc(100% - 40px);
+}
+.login_submit_btn_container{
+    width: calc(100% - 40px);
+}
+.error_message_div{ 
+    width: calc(100% - 40px);
+}
+.login_page_name_container{
+    margin-top: 60px;
+    font-size: 5rem;
+    font-weight: bolder;
+    text-align: center;
+}
+.login_submit_btn_container{
+    margin-top: 20px;
+}
+.login_submit_btn_container button{
+    width: 100%;
+    font-size: 1.8rem;
+    height: 40px;
+    font-weight: bolder;
+    border: 2px solid var(--main_color);
+    background-color: var(--main_color);
+    color: white;
+}
+.page_move_btn_container{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: calc(100% - 40px);
+    margin-bottom: 100px;
+    margin-top: 10px;
+}
+.error_message_div{
+    font-size: 0.8rem;
+    color: red;
+    height: 20px;
+}
+
+.login-input{
+    width: 100%;
+    border: 2px solid black;
+    height: 40px;
+    margin-top: 10px;
+    padding-left: 10px;
+    box-sizing: border-box;
+}
+.move-page-btn{
+    border: none;
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width" />
+    <link rel="stylesheet" href="/public/css/login.css">
+    <link rel="stylesheet" href="/public/css/layout.css">
+    <link rel="stylesheet" href="/public/css/header.css">
+    <title>로그인</title>
+</head>
+<body>
+    <header>
+        <div class="header_container">
+            <div class="page_name_container">
+                <h1 onclick="moveMainPage()">백엔드</h1>
+            </div>
+        </div>
+    </header>
+    <main>
+        <section class="login_section">
+            <div class="login_container">
+                <div class="login_page_name_container">
+                    로그인
+                </div>
+                <div class="login_input_container">
+                    <div class="id_input_container">
+                        <input type="text" id="id_input" placeholder="abc1234" class="id_input login-input">
+                    </div>
+                    <div class="pw_input_container">
+                        <input type="password" id="pw_input" placeholder="********" class="id_input login-input">
+                    </div>
+                </div>
+                <div class="error_message_div">
+
+                </div>
+                <div class="login_submit_btn_container">
+                    <button onclick="loginEvent()">로그인</button>
+                </div>
+                <div class="page_move_btn_container">
+                    <button onclick="moveSignupPage()" class="move-page-btn">회원가입</button>
+                    <button class="move-page-btn">아이디 찾기</button>
+                </div>
+            </div>                
+        </section>
+    </main>
+    <script src="/public/js/login.js"></script>
+    <script src="/public/js/move_page.js"></script>
+</body>
+</html>

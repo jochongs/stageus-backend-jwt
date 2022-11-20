@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width" />
+    <link rel="stylesheet" href="/public/css/account_detail.css">
+    <link rel="stylesheet" href="/public/css/header.css">
+    <link rel="stylesheet" href="/public/css/layout.css">
+    <title>내 계정 보기</title>
+</head>
+<body>
+    <header>
+        <div class="header_container">
+            <div class="page_name_container">
+                <h1 onclick="moveMainPage()">백엔드</h1>
+            </div>
+            <nav>
+                <button class="nav_login_btn" onclick="moveLoginPage()">로그인</button>
+                <button class="nav_logout_btn hidden" onclick="clickLogoutBtnEvent()">로그아웃</button>
+                <button class="user_info_btn hidden"> <img class="open_user_info_icon hidden" src="/public/source/icon/bottom_triangle_icon.svg" alt=""></button>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="porfile_section">
+            <div class="profile_container">
+                <div class="profile_img_container">
+                    <img class="profile_img" src="/public/source/img/profile_img.png" alt="">
+                </div>
+                <div class="profile_info_container">
+                    <div class="profile_id_container profile-info-row">
+                        <div class="column-name">
+                            아이디
+                        </div>
+                        <div class="profile_id">
+                            
+                        </div>
+                    </div>
+                    <div class="profile_name_container profile-info-row">
+                        <div class="column-name">
+                            이름
+                        </div>
+                        <div class="profile_name">
+                            
+                        </div>
+                    </div>
+                    <div class="profile_nickname_container profile-info-row">
+                        <div class="column-name">
+                            닉네임
+                        </div>
+                        <div class="profile_nickname">
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="profile_modify_btn_container">
+                    <button class="profile_modify_btn" onclick="clickModifyUserInfoBtnEvent()">수정하기</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="/public/js/header.js"></script>
+    <script src="/public/js/account_detail.js"></script>
+    <script src="/public/js/move_page.js"></script>
+</body>
+</html>

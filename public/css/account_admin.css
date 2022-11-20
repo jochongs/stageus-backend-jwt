@@ -1,0 +1,132 @@
+.log_section{
+    min-width: 1000px;
+}
+.log_container{
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+    margin-top: 30px;
+}
+.log_header{
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    height: 40px;
+    border-bottom: 2px solid #eee;
+}
+.order_input_container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.order_input{
+    height: 30px;
+    border: none;
+    background-color: #eee;
+}
+.log_submit_btn{
+    height: 30px;
+    
+    background-color: var(--main_color);
+    border: none;
+    color: white;
+}
+
+
+/* log title ========================================================= */
+.log_main_header{
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;   
+    height: 30px;
+    border-bottom: 2px solid #eee;
+}
+
+/* log item ========================================================== */
+.log_item{
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #eee;
+}
+.log_item_header_container{
+    display: flex;
+    align-items: center;
+    height: 30px;
+    cursor: pointer;
+}
+.log_item_main_container{
+    display: flex;
+    justify-content: space-evenly;
+}
+.req_container,.res_container{
+    width: 48%;
+    background-color: #eee;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+}
+.res_main_item,.req_main_item{
+    display: flex;
+    margin-bottom: 10px;
+}
+.res_main_item_title_container,.req_main_item_title_container{
+    display: flex;
+    justify-content: center;
+    width: 30%;
+    font-weight: bolder;
+}
+.res_main_item_contents_container,.req_main_item_contents_container{
+    width: 70%;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+/* layout ============================================================ */
+.log_header input{
+    padding-left: 6px;
+    border: none;
+    height: 30px;
+    background-color: #eee;
+}
+.log-name{
+    font-weight: bolder;    
+    text-align: center;
+    width: 20%;
+}
+.log-contents{
+    display: flex;
+    align-items: center;
+    justify-content: center;    
+    width: 20%;
+}
+.GET-method,.POST-method,.PUT-method,.DELETE-method{
+    display: flex;  
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    border-radius: 6px;
+    width: 100px;
+    font-weight: bolder;
+}
+
+.log-main-title{
+    display: flex;  
+    justify-content: center;
+    align-items: center;
+    font-weight: bolder;
+    height: 40px;
+}
+
+.GET-method{
+    background-color: rgb(222, 236, 220);
+}
+.POST-method{
+    background-color: rgb(214, 228, 238);
+}
+.PUT-method{
+    background-color: rgb(250, 236, 204);
+}
+.DELETE-method{
+    background-color: rgb(236, 224, 219);
+}

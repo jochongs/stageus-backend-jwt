@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width" />
+    <link rel="stylesheet" href="/public/css/account_admin.css">
+    <link rel="stylesheet" href="/public/css/header.css">
+    <link rel="stylesheet" href="/public/css/layout.css">
+    <title>관리자 페이지</title>
+</head>
+<body>
+    <header>
+        <div class="header_container">
+            <div class="page_name_container">
+                <h1 onclick="moveMainPage()">백엔드</h1>
+            </div>
+        </div>
+    </header>
+    <main>
+        <section class="log_section">
+            <div class="log_container">
+                <div class="log_header">
+                    <div class="date_input_container">
+                        <input type="date" id="start_date">
+                        ~
+                        <input type="date" id="end_date">
+                    </div>
+                    <input type="text" placeholder="abc1234" id="id_input">
+                    <input type="text" placeholder="api 명" id="api_input">
+                    <div class="order_input_container">
+                        <select id="order_input" class="order_input">
+                            <option value="asc">오름차순</option>
+                            <option value="desc">내림차순</option>
+                        </select>
+                    </div>
+                    <!-- <input type="text" id="only_input" placeholder="res/req"> -->
+                    <button onclick="requestLog()" class="log_submit_btn">검색</button>
+                </div>
+
+                <div class="log_main">
+                    <div class="log_main_header">
+                        <div class="method_title_contaienr log-name">
+                            method
+                        </div>
+                        <div class="api_title_container log-name">
+                            api
+                        </div>
+                        <div class="id_title_container log-name">
+                            아이디
+                        </div>
+                        <div class="req_time_container log-name">
+                            요청 시간
+                        </div>
+                        <div class="res_time_container log-name">
+                            응답 시간
+                        </div>
+                    </div>
+                    <!-- <div class="log_item">
+                        <div class="log_item_header_container">
+                            <div class="log_method_container log-contents">
+                                <span class="GET-method">GET</span>
+                            </div>
+                            <div class="log_api_container log-contents">
+                                /session
+                            </div>
+                            <div class="log_id_container log-contents">
+                                asdf1234
+                            </div>
+                            <div class="log_req_time_container log-contents">
+                                22-10-20  12:00:00
+                            </div>
+                            <div class="log_res_time_container log-contents">
+                                22-10-20  12:00:00
+                            </div>
+                        </div>
+                        <div class="log_item_main_container">
+                            <div class="req_container">
+                                <div class="req_title_container log-main-title">
+                                    요청
+                                </div>
+                                <div class="req_main_container">
+                                    <div class="req_main_item">
+                                        <div class="req_main_item_title_container">
+                                            time
+                                        </div>
+                                        <div class="req_main_item_contents_container">
+                                            22-10-20 12:00:00
+                                        </div>
+                                    </div>
+                                    <div class="req_main_item">
+                                        <div class="req_main_item_title_container">
+                                            query
+                                        </div>
+                                        <div class="req_main_item_contents_container">
+                                            ?sadf=asdf&asdf?asdfkldsjflksdafjkljfsdlkadjsflkdjflkadsjfklasfj
+                                        </div>
+                                    </div>
+                                    <div class="req_main_item">
+                                        
+                                        <div class="req_main_item_title_container">
+                                            body
+                                        </div>
+                                        <div class="req_main_item_contents_container">
+<pre>
+{
+    
+}
+</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="res_container">
+                                <div class="res_title_container log-main-title">
+                                    응답
+                                </div>
+                                <div class="res_main_container">
+                                    <div class="res_main_item">
+                                        <div class="res_main_item_title_container">
+                                            code
+                                        </div>
+                                        <div class="res_main_item_contents_container">
+                                            200 
+                                        </div>
+                                    </div>
+                                    <div class="res_main_item">
+                                        <div class="res_main_item_title_container">
+                                            time
+                                        </div>
+                                        <div class="res_main_item_contents_container">
+                                            22-10-20 12:00:00
+                                        </div>
+                                    </div>
+                                    <div class="res_main_item">
+                                        <div class="res_main_item_title_container">
+                                            result
+                                        </div>
+                                        <div class="res_main_item_contents_container">                                            
+<pre>{
+    sdfkljasdlkf
+    sadfkjasdlfkj
+}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
+                </div>
+                <button data-page="1" id="additional_btn" onclick="clickAdditionalBtnClickEvent()">더보기</button>
+            </div>
+        </section>
+    </main>
+    <script src="/public/js/header.js"></script>
+    <script src="/public/js/account_admin.js"></script>
+    <script src="/public/js/move_page.js"></script>
+</body>
+</html>

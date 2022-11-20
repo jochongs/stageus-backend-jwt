@@ -1,0 +1,61 @@
+/* header ===================================================================== */
+header{
+    background-color: white;
+    justify-content: center;
+    height: 60px;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+}
+.page_name_container{
+    user-select: none;
+    cursor: pointer;
+}
+.header_container{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.nav_login_btn,.nav_logout_btn{
+    width: 80px;
+    height: 40px;
+    border:none;
+    background-color: var(--main_color);    
+    color: white;
+    border-radius: 6px;
+    font-weight: bolder;
+    font-size: 1rem;
+}
+.nav_logout_btn{
+    font-size: 0.7rem;
+}
+nav{
+    display: flex;
+    align-items: center;
+}
+.user_info_btn{
+    display: flex;
+    align-items: center;
+    border: none;
+    font-size: 1rem;
+    margin-left: 10px;
+}
+.open_user_info_icon{
+    width: 10px;
+    height: 10px;
+}
+
+@media (min-width:0px) and (max-width: 600px) {
+    nav{
+        margin-right: 10px;
+    }
+    .page_name_container{
+        margin-left: 10px;
+    }
+}
+@media (min-width:600px) and (max-width: 1000px) {
+    .page_name_container{
+        margin-left: 10px;
+    }
+    nav{
+        margin-right: 10px;
+    }
+}
