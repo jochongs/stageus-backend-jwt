@@ -5,7 +5,15 @@ window.onload = ()=>{
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
 const checkLoginState = async ()=>{
-    const response = await fetch('/session');
+    //get token
+    const token = localStorage.getItem('token');
+
+    const response = await fetch('/session', {
+        method : "GET",
+        headers : {
+            Authorization : token
+        }
+    });
     const result = await response.json();
     
     if(result.state){ //로그인을 한 경우
@@ -37,15 +45,22 @@ const checkLoginState = async ()=>{
 
 //사용자의 정보를 받아오는 API
 const getAccountData = async ()=>{
-    //사용자 아이디 
+    //prepare data
     const userId = location.pathname.split('/')[location.pathname.split('/').length-1];
+    const token = localStorage.getItem('token');
 
-    //요청
-    const response = await fetch(`/account/${userId}`);
+    //request
+    const response = await fetch(`/account/${userId}`, {
+        method : "GET",
+        headers : {
+            Authorization : token
+        }
+    });
     const result = await response.json();
 
-    if(result.state){
-        console.log(result.data);
+    console.log(result);
+
+    if(result.success){
         //DB값 가져오기
         const data = result.data[0];
         const id = data.id;
@@ -62,10 +77,10 @@ const getAccountData = async ()=>{
         profileNameDiv.innerText = name;
         profileNicknameDiv.innerText = nickname;
     }else{
-        if(!result.error.auth){
-            alert(result.error.errorMessage);
-            location.href = '/';
-        }else if(result.error.DB){
+        if(!result.auth){
+            alert("권한이 없습니다.");
+            location.href = '/page/login';
+        }else{
             location.href = '/page/error';
         }
     }
@@ -94,20 +109,22 @@ const clickModifyUserInfoBtnEvent = ()=>{
     const modifySubmitBtn = document.createElement('button');
     modifySubmitBtn.classList.add('profile_modify_btn');
     modifySubmitBtn.innerText = "수정완료";
-    modifySubmitBtn.addEventListener('click',async (e)=>{
+    modifySubmitBtn.addEventListener('click', async (e)=>{
         const name = nameInput.value;
         const nickname = nicknameInput.value;
         const usreId = location.pathname.split('/')[location.pathname.split('/').length-1];
 
         const errorMessageContainerArray = document.querySelectorAll('.error-container');
-        errorMessageContainerArray.forEach((errorMessageContainer)=>{
+        errorMessageContainerArray.forEach((errorMessageContainer) => {
             errorMessageContainer.remove();
         })  
 
-        const response = await fetch(`/account/${usreId}`,{
+        //request
+        const response = await fetch(`/account/${usreId}`, {
             "method" : "PUT",
             "headers" : {
-                "Content-Type" : "application/json"
+                "Content-Type" : "application/json",
+                "Authorization" : localStorage.getItem("token")
             },
             "body" : JSON.stringify({
                 name : name,
@@ -116,17 +133,14 @@ const clickModifyUserInfoBtnEvent = ()=>{
         })
         const result = await response.json();
 
-        console.log(result);    
+        console.log(result);
         
-        if(result.state){
+        //check result
+        if(result.success){
             location.reload();
         }else{
-            if(result.error.DB){
-                location.href = "/page/error";
-            }else if(!result.error.auth){
-                alert(result.error.errorMessage);
-            }else{
-                result.error.errorMessage.forEach((error)=>{
+            if(result?.errorMessage?.length >= 1){
+                result.errorMessage.forEach((error)=>{
                     const errorContainer = document.createElement('div');
                     errorContainer.classList.add('error-container');
                     errorContainer.innerText = error.message;
@@ -136,6 +150,10 @@ const clickModifyUserInfoBtnEvent = ()=>{
                     const profileContaienr = document.querySelector(className);
                     profileContaienr.append(errorContainer);
                 })
+            }else if(!result.auth){
+                alert("권한이 없습니다.");
+            }else{
+                location.href = '/page/error';
             }
         }
     });

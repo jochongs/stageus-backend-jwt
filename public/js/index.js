@@ -4,11 +4,20 @@ window.onload = ()=>{
 }
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
-const checkLoginState = async ()=>{
-    const response = await fetch('/session');
+const checkLoginState = async () => {
+    //get token
+    const token = localStorage.getItem("token");
+
+    //request userData
+    const response = await fetch(`/session`,{
+        method : "GET",
+        headers : {
+            Authorization : token
+        }
+    });
     const result = await response.json();
     
-    if(result.state){ //로그인을 한 경우
+    if(result.success){ 
         //로그인 버튼 생성
         document.querySelector('.nav_login_btn').classList.add('hidden');
 
@@ -43,12 +52,13 @@ const checkLoginState = async ()=>{
 
 //포스트데이터를 가져오는 함수
 const getPostData = async ()=>{
+    //request post data
     const response = await fetch('/post/all');
     const result = await response.json();
 
-    if(result.state){ //성공하면
+    if(result.success){ //성공하면
         addPostItem(result.data);
-    }else if(result.error.DB){ //데이터베이스 에러 발생시
+    }else if(result.code === 500){ //데이터베이스 에러 발생시
         location.href = "/error";
     }
 }

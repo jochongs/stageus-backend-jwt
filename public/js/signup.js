@@ -12,7 +12,7 @@ const clickSignupBtnEvent = async ()=>{
         div.remove();
     })
 
-
+    //request signup
     const response = await fetch('/account',{
         "method" : "POST",
         "headers" : {
@@ -28,14 +28,14 @@ const clickSignupBtnEvent = async ()=>{
     })
     const result = await response.json();
     
-    if(result.state){ //성공시
+    if(result.success){ //성공시
         alert('회원가입 성공');
         location.href = '/page/login';
     }else{
-        if(result.error.DB){ //db에러 시
-            //location.href = '/page/error';
-        }else{ //예외처리 에러시
-            result.error.errorMessage.map((data)=>{
+        if(!result.auth){
+            alert("권한이 없습니다.");
+        }else if(result.code === 500){
+            result.errorMessage.map((data)=>{
                 const div = document.createElement('div');
                 div.classList.add('error-message');
                 div.innerText = data.message;

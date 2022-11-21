@@ -1,16 +1,15 @@
 const router = require('express').Router();
 const mongodb = require('mongodb').MongoClient;
 
-router.get('/:option', async (req,res)=>{
+router.get('/:option', async (req, res) => {
     //요청 준비
-    const {userId,api,method,order,only,start_date,end_date,page} = req.query;
-    console.log(start_date,end_date,userId,api,method,order,page);
-
+    const {userId, api, method, order, only, start_date, end_date, page} = req.query;
     const limit = 30;
 
     //FE로 보내줄 데이터 준비
     const result = {
-        state : true
+        success : true,
+        auth : true
     }
 
     //쿼리 준비
@@ -63,14 +62,11 @@ router.get('/:option', async (req,res)=>{
             DB.close();
 
             result.data = data;
-            result.query = query;
-            result.projection = projection;
-
             res.send(result);
         }catch(err){
             console.log(err);
 
-            result.state = false;
+            result.success = false;
             result.errorMessage = "DB에러가 발생했습니다.";
             result.code = 500;
 

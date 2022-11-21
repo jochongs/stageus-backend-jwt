@@ -6,14 +6,29 @@ window.onload = ()=>{
 }
 
 const requestPostData = async (postIdx)=>{
-    const response = await fetch(`/post/${postIdx}`);
+    //prepare data
+    const token = localStorage.getItem('token');
+
+    //request post data
+    const response = await fetch(`/post/${postIdx}`,{
+        method : "GET",
+        headers : {
+            Authorization : token
+        }
+    });
     const result = await response.json();
-    console.log(result);
 
-    const response2 = await fetch('/session');
+    //request user data
+    const response2 = await fetch('/session',{
+        "method" : "GET",
+        "headers" : {
+            "authorization" : token
+        }
+    });
     const result2 = await response2.json();
+    console.log(result2);
 
-    if(result.state){
+    if(result.success){
         if(result.data.length === 0){
             location.href = '/page/error404';
             return 0;
@@ -53,18 +68,29 @@ const requestPostData = async (postIdx)=>{
     }
 }
 
+//변경 필수
 const requestCommentData = async (postIdx)=>{
+    //request comment data
     const response = await fetch(`/comment?postIdx=${postIdx}`);
     const result = await response.json();
+
     console.log(result);
 
-    if(result.state){
+    if(result.success){
+        //prepare data
         const commentDataArray = result.data;
+        const token = localStorage.getItem('token');
 
-        const response2 = await fetch('/session');
+        //request user data
+        const response2 = await fetch('/session', {
+            "method" : "GET",
+            "headers" : {
+                "authorization" : token
+            }
+        });
         const result2 = await response2.json();
 
-        commentDataArray.forEach((commentData,index)=>{
+        commentDataArray.forEach((commentData, index) => {
             const author = commentData.nickname;
             const date = new Date(commentData.comment_date);
             const contents = commentData.comment_contents;
@@ -121,15 +147,23 @@ const requestCommentData = async (postIdx)=>{
             document.querySelector('.comment_container').append(commentItem);
         })
     }else{
-        location.href = '/page/error';
+        //location.href = '/page/error';
     }
 }
 
 const checkLoginState = async ()=>{
-    const response = await fetch('/session');
+    //prepare data
+    const token = localStorage.getItem('token');
+
+    const response = await fetch('/session', {
+        method : "GET",
+        headers : {
+            Authorization : token
+        }
+    });
     const result = await response.json();
 
-    if(result.state){ //로그인이 되어있으면
+    if(result.success){ //로그인이 되어있으면
         document.querySelector('.comment_container .input_container').classList.remove('hidden');
 
         //로그인 버튼 생성
@@ -160,14 +194,18 @@ const checkLoginState = async ()=>{
     }
 }
 
+//변경필수
 const clickCommentSubmitBtnEvent = async ()=>{
+    //prepare data
     const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];
     const comment = document.getElementById('comment').value;
+    const token = localStorage.getItem('token');
 
     const response = await fetch(`/comment?postIdx=${postIdx}`,{
         "method" : "POST",
         "headers" : {
-            "Content-Type" : "application/json"
+            "Content-Type" : "application/json",
+            "Authorization" : token
         },
         "body" : JSON.stringify({
             contents : comment,
@@ -188,6 +226,7 @@ const clickCommentSubmitBtnEvent = async ()=>{
     }
 }
 
+//변경 필수
 const clickDeleteCommentBtnEvent = async (e)=>{
     const commentIdx = e.target.dataset.commentIdx;
 
@@ -210,6 +249,7 @@ const clickDeleteCommentBtnEvent = async (e)=>{
     }
 }
 
+//변경 필수
 const clickModifyCommentBtnEvent = (e)=>{
     const commentItem = e.target.parentElement.parentElement;
     const commentContents = commentItem.querySelector('.comment_contents').innerText;
@@ -257,27 +297,28 @@ const clickModifyCommentBtnEvent = (e)=>{
 }
 
 const clickDeletePostBtnEvent = async ()=>{
+    //prepare data
     const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];
+    const token = localStorage.getItem('token');
 
+    //request delete post data
     const response = await  fetch(`/post/${postIdx}`,{
         "method" : "DELETE",
         "headers" : {
-            "Content-Type" : "application/json"
+            "Content-Type" : "application/json",
+            "authorization" : token
         },
     })
-
     const result = await response.json();
 
-    console.log(result);
-
-    if(result.state){
+    //check result
+    if(result.success){
         location.href = '/';
-    }else{
-        if(result.error.DB){
-            location.href = '/page/error';
-        }else if(!result.error.auth){
-            alert(result.error.errorMessage);
-        }
+    }else if(result.code === 500){
+        location.href = '/page/error';
+    }else if(!result.auth){
+        alert('권한이 없습니다.');
+        location.reload();
     }
 }
 
@@ -305,14 +346,18 @@ const clickModifyPostBtnEvent = ()=>{
     postModifySubmitBtn.classList.add('post_modify_submit_btn');
     postModifySubmitBtn.innerHTML = "수정완료";
     postModifySubmitBtn.addEventListener('click',async (e)=>{
+        //prepare data
         const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];       
         const titleValue = titleInput.value;
         const contentsValue = contentsInput.value;
+        const token = localStorage.getItem('token');
         
+        //request post modify
         const response = await fetch(`/post/${postIdx}`,{
             "method" : "PUT",
             "headers" : {
-                "Content-Type" : "application/json"
+                "Content-Type" : "application/json",
+                "authorization" : token
             },
             "body" : JSON.stringify({
                 title : titleValue,
@@ -321,16 +366,16 @@ const clickModifyPostBtnEvent = ()=>{
         })
         const result = await response.json();
 
-        if(result.state){
-            location.reload();
-        }else{
-            if(result.error.DB){
-                location.href = '/page/error';
-            }else if(!result.error.auth){
-                alert(result.error.errorMessage);
-            }else{
+        console.log(result);
 
-            }
+        //check result
+        if(result.success){
+            location.reload();
+        }else if(result.code === 500){
+            location.href = "/page/error";
+        }else if(!result.auth){
+            alert('권한이 없습니다.');
+            location.reload();
         }
     })
     

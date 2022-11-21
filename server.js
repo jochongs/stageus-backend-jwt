@@ -4,8 +4,6 @@ const app = express();
 const path = require('path');
 const dotenv = require('dotenv');
 const session = require('express-session');
-const requestIp = require('request-ip');
-const geoip = require('geoip-lite');
 const fs = require('fs');
 const https = require('https');
 const logging = require('./module/logging');
@@ -17,7 +15,8 @@ const postApi = require('./router/post');
 const commentApi = require('./router/comment');
 const authApi = require('./router/auth');
 const logApi = require('./router/log');
-const testApi = require('./router/test');
+const admin_auth_check = require('./module/admin_auth_check');
+//const testApi = require('./router/test');
 
 //설정 =========================================================================================================================================================
 dotenv.config();
@@ -31,8 +30,6 @@ const options = {
 //전역 미들웨어 =====================================================================================================================================================
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
-//app.use(express.urlencoded({ extended: false })); //얘도 파싱해주는 거긴함
-//app.use(multipart()); //formdata 파싱해주는 거
 app.use(session({ 
     secret : "sadfklasdjfl", //대충 입력
     resave : false,
@@ -58,8 +55,8 @@ app.use('/session',sessionApi);
 app.use('/post',postApi);
 app.use('/comment',commentApi);
 app.use('/auth',authApi);
-app.use('/log',logApi);
-app.use('/test',testApi);
+app.use('/log', admin_auth_check, logApi);
+//app.use('/test',testApi);
 
 
 //페이지==========================================================================================================================================================

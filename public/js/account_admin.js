@@ -1,4 +1,4 @@
-const requestLog = async (itemRemoveOption=true,page=0)=>{
+const requestLog = async (itemRemoveOption=true, page=0) => {
     if(itemRemoveOption){
         //item 들초기화 
         document.querySelectorAll('.log_item').forEach((item)=>{
@@ -69,11 +69,21 @@ const requestLog = async (itemRemoveOption=true,page=0)=>{
     }
 
     //서버에 요청
-    const request = await fetch(`/log/all?${queryString}`);
+    const request = await fetch(`/log/all?${queryString}`,{
+        method : "GET",
+        headers : {
+            "Authorization" : localStorage.getItem('token')
+        }
+    });
     const result = await request.json();
 
-    addLogData(result.data);
     console.log(result);
+
+    if(result.success){
+        addLogData(result.data);
+    }else if(!result.auth){
+        alert('권한이 없습니다.');
+    }
 }
 
 //데이터 추가해주는 함수

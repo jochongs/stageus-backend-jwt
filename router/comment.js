@@ -5,46 +5,37 @@ const loginAuthCheck = require('../module/login_auth_check');
 
 
 //댓글의 db데이터를 가져오는 api
-router.get('/',(req,res)=>{
+router.get('/', async (req, res) => {
     //FE로 받을 데이터
     const postIdx = req.query.postIdx;
 
     //FE로 보내줄 데이터
     const result = {
-        state : true,
-        error : {
-            DB : false,
-            errorMessage : ""
-        },
-        data : []
+        success : true,
+        data : [],
+        auth : true,
+        code : 200
     }
 
-    //sql문 준비
-    const sql = `SELECT comment_idx,post_idx,comment_contents,comment_date,nickname,comment_author FROM backend.comment JOIN backend.account ON comment_author=id WHERE post_idx = $1 ORDER BY comment_idx DESC`;
-
-    //DB 준비 
     try{
+        //DB connect
         const client = new Client(pgConfig);
-        client.connect((err)=>{
-            if(err) console.log(err);
-        })
-        client.query(sql,[postIdx],(err,data)=>{
-            if(err){
-                console.log(err);
-                result.state = false;
-                result.error.DB = true;
-                result.error.errorMessage = "DB 에러가 발생했습니다.";
-                delete result.data;        
-            }else{
-                result.data = data.rows;
-                delete result.error;
-            }
-            res.send(result);
-        })
+        await client.connect();
+
+        //SELECT comment data
+        const sql = `SELECT comment_idx,post_idx,comment_contents,comment_date,nickname,comment_author FROM backend.comment JOIN backend.account ON comment_author=id WHERE post_idx = $1 ORDER BY comment_idx DESC`;
+        const selectData = await client.query(sql, [postIdx]);
+
+        //send result
+        result.data = selectData.rows;
+        delete result.error;
+        res.send(result);
     }catch(err){
-        result.state = false;
-        result.error.DB = true;
-        result.error.errorMessage = "DB 에러가 발생했습니다.";
+        console.log(err);
+
+        //send result
+        result.success = false;
+        result.code = 500;
         delete result.data;
         res.send(result);
     }

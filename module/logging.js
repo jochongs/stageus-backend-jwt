@@ -27,19 +27,25 @@ const logging = async (req,res,result) =>{
         res : resObj
     }
 
-    //DB연결 후 삽입
     try{
+        //INSERT
         const DB = await mongodb.connect("mongodb://localhost:27017");
         await DB.db('stageus').collection("log").insertOne(obj);
+
+        //CLOSE
         DB.close();    
     }catch(err){
+        console.log(err);
+
+        //INSERT
         const DB = await mongodb.connect("mongodb://localhost:27017");
         await DB.db('stageus').collection("log_error").insertOne({
             time : new Date(),
             err : err,
             obj : obj
         });
-        console.log(err);
+
+        //CLOSE
         DB.close();    
     }
 }

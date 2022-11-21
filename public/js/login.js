@@ -5,6 +5,8 @@ const loginEvent = async ()=>{
     
     //에러 메시지 초기화
     errorDiv.innerHTML = "";
+
+    //request
     const response = await fetch('/session',{
         "method" : "POST",
         "headers" : {
@@ -17,11 +19,13 @@ const loginEvent = async ()=>{
     })
     const result = await response.json();
 
-    if(result.state){ //로그인 성공시
+    //check result
+    if(result.success){
+        localStorage.setItem('token', result.token);
         location.href = document.referrer;
-    }else if(result.error.DB){ //DB에러 발생시
+    }else if(result.code === 500){
         location.href = '/page/error';
     }else{
-        errorDiv.innerHTML = `*${result.error.errorMessage}`;
+        errorDiv.innerHTML = `*아이디또는 비밀번호가 잘못되었습니다.`;
     }
 }
