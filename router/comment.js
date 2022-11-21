@@ -42,191 +42,164 @@ router.get('/', async (req, res) => {
 });
 
 //comment에 데이터 삽입 api
-router.post('/',loginAuthCheck,(req,res)=>{
+router.post('/', loginAuthCheck, async (req, res) => {
     //FE에서 받아온 값
-    const author = req.session.userId;
+    const commentAuthor = req.userData.id;
     const postIdx = req.query.postIdx;
     const contents = req.body.contents;
 
     //FE에 보낼 값
     const result = {
-        state : true,
-        error : {
-            DB : false,
-            auth : true
-        }
+        success : true,
+        errorMessage : [],
+        auth : true,
+        code : 200
     }
 
     if(contents.length === 0){ //입력값 예외상황
         result.state = false;
-        result.error.errorMessage = [{
+        result.errorMessage = [{
             class : "contents",
             message : "내용을 입력해야합니다."
         }]
         res.send(result);
     }else{ 
-        //sql준비
-        const sql = `INSERT INTO backend.comment (comment_author,comment_contents,post_idx) VALUES ($1,$2,$3)`;
-        const params = [req.session.userId, contents, postIdx];
-
-        //DB연결
         try{
+            //DB connect
             const client = new Client(pgConfig);
-            client.connect((err)=>{
-                if(err) console.log(err);
-            })
-            client.query(sql,params,(err)=>{
-                if(err){
-                    result.state = false;
-                    result.error.DB = true;
-                    result.error.errorMessage = "DB에러가 발생헀습니다.";
-                }else{
-                    delete result.error;
-                }
-                res.send(result);
-            })
-        }catch{
-            result.state = false;
-            result.error.DB = true;
-            result.error.errorMessage = "DB에러가 발생헀습니다.";
+            await client.connect();
+
+            //INSERT comment
+            const sql = `INSERT INTO backend.comment (comment_author,comment_contents,post_idx) VALUES ($1,$2,$3)`;
+            await client.query(sql, [commentAuthor, contents, postIdx]);
+
+            //send result
+            delete result.errorMessage;
+            res.send(result);
+        }catch(err){
+            console.log(err);
+
+            //send result
+            result.success = false;
+            result.code = 500;
+            delete result.errorMessage;
             res.send(result);
         }
     }
 })
 
 //comment 수정 api
-router.put('/:commentIdx',loginAuthCheck,(req,res)=>{
+router.put('/:commentIdx', loginAuthCheck, async (req, res) => {
     //FE에서 받아온 데이터
     const commentIdx = req.params.commentIdx;
-    const userId = req.session.userId;
+    const userId = req.userData.id;
+    const authority = req.userData.authority;
     const contents = req.body.contents;
 
     //FE에 줄 데이터
     const result = {
-        state : true,
-        error : {
-            DB : false,
-            auth : true,
-            errorMessage : ""
-        }
+        success : true,
+        errorMessage : [],
+        auth : true,
+        code : 200
     }
 
+    //FE data check
     if(contents.length === 0){
-        result.state = false;
-        delete result.error.errorMessage;
-        result.error.errorMessage = [];
-        result.error.errorMessage.push({
+        //send result
+        result.success = false;
+        result.errorMessage.push({
             class : "contents",
             message : "내용을 입력해야합니다."
         })
         res.send(result);
     }else{
-        //sql준비
-        const sql = `SELECT comment_author FROM backend.comment WHERE comment_idx=$1`;
-        const params = [commentIdx];
+        try{
+            //DB connect
+            const client = new Client(pgConfig);
+            await client.connect();
+            
+            //SELECT comment author
+            const sql = `SELECT comment_author FROM backend.comment WHERE comment_idx=$1`;
+            const params = [commentIdx];
+            const selectCommentAuthorData = await client.query(sql, params);
 
-        //DB 연결
-        const client = new Client(pgConfig);
-        client.connect((err)=>{
-            if(err) console.log(err);
-        })
-        client.query(sql,params,(err,data)=>{
-            if(err){
-                console.log(err);
-                result.state = false;
-                result.error.DB = true;
-                result.error.errorMessage = "DB에러가 발생했습니다.";
+            //check authority 
+            if(userId === selectCommentAuthorData.rows[0].comment_author || authority === 'admin'){
+                //DELETE comment
+                const sql2 = `UPDATE backend.comment SET comment_contents=$1 WHERE comment_idx = $2`;
+                await client.query(sql2, [contents, commentIdx]);
+
+                //send result (success)
+                result.success = true;
+                result.auth = true;
+                delete result.errorMessage;
                 res.send(result);
             }else{
-                if(userId === data.rows[0].comment_author || req.session.authority === 'admin'){
-                    //sql준비
-                    const sql2 = `UPDATE backend.comment SET comment_contents=$1 WHERE comment_idx = $2`;
-                    const params = [contents,commentIdx];
-
-                    //DB연결
-                    client.query(sql2,params,(err2)=>{
-                        if(err2){
-                            console.log(err2);
-                            result.state = false;
-                            result.error.DB = true;
-                            result.error.errorMessage = "DB에러가 발생했습니다.";
-                        }else{
-                            delete result.error;
-                        }
-                        res.send(result);
-                    })
-                }else{
-                    result.state = false;
-                    result.error.auth = false;
-                    result.error.errorMessage = "접근 권한이 없습니다.";
-                    res.send(result);
-                }
+                //send result (no auth)
+                result.success = false;
+                result.auth = false;
+                delete result.errorMessage;
+                res.send(result);
             }
-        })
+        }catch(err){
+            console.log(err);
+            
+            //send result (error)
+            delete result.errorMessage;
+            result.success = false;
+            result.auth = true;
+            result.code = 500;
+            res.send(result);
+        }
     }
 })
 
 
 //comment 삭제 api
-router.delete('/:commentIdx',loginAuthCheck,(req,res)=>{
+router.delete('/:commentIdx', loginAuthCheck, async (req, res) => {
     //FE로부터 받은 데이터
     const commentIdx = req.params.commentIdx;
-    const userId = req.session.userId;
+    const userId = req.userData.id;
+    const userAuthority = req.userData.authority;
 
     //FE로 보내줄 데이터
     const result = {
-        state : true,
-        error : {
-            DB : false,
-            auth : true,
-            errorMessage : ""
-        }
+        success : true,
+        code : 200,
+        auth : true
     }
 
-    //sql준비
-    const sql = `SELECT comment_author FROM backend.comment WHERE comment_idx=$1`;
-    const params = [commentIdx];
-
-    //DB연결
     try{
+        //DB connect
         const client = new Client(pgConfig);
-        client.connect((err)=>{
-            if(err) console.log(err);
-        })
-        client.query(sql,params,(err,data)=>{
-            if(err){
-                console.log(err);
-                result.state = false;
-                result.error.DB = true;
-                result.error.errorMessage = "DB에러가 발생했습니다.";
-                res.send(result);
-            }else{
-                if(userId === data.rows[0].comment_author || req.session.authority === 'admin'){
-                    //sql 준비
-                    const sql2 = 'DELETE FROM backend.comment WHERE comment_idx=$1';
-                    
-                    client.query(sql2,params,(err2)=>{
-                        if(err2){
-                            console.log(err2);
-                            result.state = false;
-                            result.error.DB = true;
-                            result.error.errorMessage = "DB에러가 발생했습니다.";
-                        }else{
-                            delete result.error;
-                        }
-                        res.send(result);
-                    })
-                }else{
-                    result.state = false;
-                    result.error.errorMessage = "DB에러가 발생했습니다.";
-                    res.send(result);
-                }
-            }
-        })
-    }catch{
-        result.state = false;
-        result.error.DB = true;
-        result.error.errorMessage = "DB에러가 발생했습니다.";
+        await client.connect();
+
+        //SELECT comment author
+        const sql = `SELECT comment_author FROM backend.comment WHERE comment_idx=$1`;
+        const selectCommentAuthor = await client.query(sql, [commentIdx]);
+        
+        //check authority
+        if(userId === selectCommentAuthor.rows[0].comment_author || userAuthority === 'admin'){
+            //DELETE comment
+            const sql2 = 'DELETE FROM backend.comment WHERE comment_idx=$1';
+            await client.query(sql2, [commentIdx]);
+
+            //send result (success)
+            res.send(result);
+        }else{
+            //send result (no auth)
+            result.success = false;
+            result.auth = false;
+            res.send(result);
+        }
+    }catch(err){
+        console.log(err);
+
+        //send result (error)
+        result.success = false;
+        result.code = 500;
+        result.auth = true;
         res.send(result);
     }
 })

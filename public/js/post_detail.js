@@ -68,7 +68,6 @@ const requestPostData = async (postIdx)=>{
     }
 }
 
-//변경 필수
 const requestCommentData = async (postIdx)=>{
     //request comment data
     const response = await fetch(`/comment?postIdx=${postIdx}`);
@@ -147,11 +146,11 @@ const requestCommentData = async (postIdx)=>{
             document.querySelector('.comment_container').append(commentItem);
         })
     }else{
-        //location.href = '/page/error';
+        location.href = '/page/error';
     }
 }
 
-const checkLoginState = async ()=>{
+const checkLoginState = async () => {
     //prepare data
     const token = localStorage.getItem('token');
 
@@ -194,13 +193,13 @@ const checkLoginState = async ()=>{
     }
 }
 
-//변경필수
 const clickCommentSubmitBtnEvent = async ()=>{
     //prepare data
     const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];
     const comment = document.getElementById('comment').value;
     const token = localStorage.getItem('token');
 
+    //request add comment
     const response = await fetch(`/comment?postIdx=${postIdx}`,{
         "method" : "POST",
         "headers" : {
@@ -213,43 +212,47 @@ const clickCommentSubmitBtnEvent = async ()=>{
     })
     const result = await response.json();
 
-    if(result.state){//성공 시
+    console.log(result);
+
+    //check reuslt
+    if(result.success){
         location.reload();
-    }else{
-        if(!result.error.auth){
-            alert(result.error.errorMessage);
-        }else if(result.error.DB){
-            location.href = '/page/error';
-        }else{
-            alert('댓글 달 내용을 입력해야합니다.');
-        }
+    }else if(result.code === 500){
+        location.href = '/page/error';
+    }else if(!result.auth){
+        alert('권한이 없습니다.');
+        localStorage.removeItem('token');
+        location.reload();
     }
 }
 
-//변경 필수
 const clickDeleteCommentBtnEvent = async (e)=>{
+    //prepare data
     const commentIdx = e.target.dataset.commentIdx;
+    const token = localStorage.getItem('token');
 
+    //request delete comment
     const response = await fetch(`/comment/${commentIdx}`,{
         "method" : "DELETE",
         "headers" : {
-            "Content-Type" : "application/json"
+            "Content-Type" : "application/json",
+            "authorization" : token
         }
     })
     const result = await response.json();
 
-    if(result.state){//성공 시
+    //check result
+    if(result.success){
         location.reload();
-    }else{
-        if(!result.error.auth){
-            alert(result.error.errorMessage);
-        }else if(result.error.DB){
-            location.href = '/page/error';
-        }
+    }else if(result.code === 500){
+        location.href = '/page/error';
+    }else if(!result.auth){
+        alert('권한이 없습니다.');
+        localStorage.removeItem('token');
+        location.reload();
     }
 }
 
-//변경 필수
 const clickModifyCommentBtnEvent = (e)=>{
     const commentItem = e.target.parentElement.parentElement;
     const commentContents = commentItem.querySelector('.comment_contents').innerText;
@@ -263,13 +266,17 @@ const clickModifyCommentBtnEvent = (e)=>{
     submitBtn.classList.add('modify_comment_submit_btn');
     submitBtn.innerText = "수정완료";
     submitBtn.addEventListener('click', async ()=>{
+        //prepare data
         const commentIdx = e.target.dataset.commentIdx;
         const contents = input.value;
+        const token = localStorage.getItem('token');
 
-        const response = await  fetch(`/comment/${commentIdx}`,{
+        //request comment modify
+        const response = await fetch(`/comment/${commentIdx}`, {
             "method" : "PUT",
             "headers" : {
-                "Content-Type" : "application/json"
+                "Content-Type" : "application/json",
+                "authorization" : token
             },
             "body" : JSON.stringify({
                 contents : contents,
@@ -277,16 +284,14 @@ const clickModifyCommentBtnEvent = (e)=>{
         })
         const result = await response.json();   
         
-        if(result.state){
+        if(result.success){
             location.reload();
-        }else{
-            if(result.error.DB){
-                location.href = "/page/error";
-            }else if(!result.error.auth){
-                location.href = '/page/login';
-            }else{
-                alert(result.error.errorMessage[0].message);
-            }
+        }else if(result.code === 500){
+            location.href = '/page/error';
+        }else if(!result.auth){
+            alert('권한이 없습니다.');
+            localStorage.removeItem('token');
+            location.reload();
         }
     })
     

@@ -3,11 +3,9 @@ const pgConfig = require('../config/pg_config');
 const { Client } = require('pg');
 const logging = require('../module/logging');
 const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
+const SECRET_KEY = require('../config/jwt_secret_key');
 
 // setting ====================================================
-dotenv.config();
-const SECRET_KEY = process.env.JWT_SECRET_KEY;
 
 //로그인된 사용자의 아이디
 router.get('/', (req, res) => {
@@ -110,25 +108,5 @@ router.post('/', async (req, res) => {
     
     
 })
-
-//로그아웃 api
-router.delete('/',(req,res)=>{
-    const result = {
-        state : false
-    }
-    if(req.session.userId !== undefined){ //로그인이 되어있는 경우
-        req.session.userId = undefined;
-        result.state = true;
-        result.authority = false;
-    }else{
-        result.state = false;
-        result.error = {
-            errorMessage : "이미 로그아웃이 되어있습니다."
-        }
-    }
-    logging(req,res,result);
-    res.send(result);
-})
-
 
 module.exports = router;
