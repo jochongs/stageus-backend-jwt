@@ -1,10 +1,33 @@
-window.onload = ()=>{
+window.onload = async () => {
     checkLoginState();
     getAccountData();
+    
+    const token = localStorage.getItem('token');
+
+    if(token === null){
+        history.back();
+    }else{
+        //request login auth
+        const response = await fetch('/session',{
+            "method" : "GET",
+            "headers" : {
+                "authorization" : token
+            }
+        })
+        const result = await response.json();
+
+        if(result.success){
+            document.querySelector('.nav_login_btn').classList.add('hidden');
+            document.querySelector('.nav_logout_btn').classList.remove('hidden');
+        }else{
+            alert("사용자 정보를 찾을 수 없습니다.");
+            history.back();
+        }
+    }
 }
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
-const checkLoginState = async ()=>{
+const checkLoginState = async () => {
     //get token
     const token = localStorage.getItem('token');
 

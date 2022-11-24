@@ -16,6 +16,8 @@ const checkLoginState = async () => {
         }
     });
     const result = await response.json();
+
+    console.log(result);
     
     if(result.success){ 
         //로그인 버튼 생성

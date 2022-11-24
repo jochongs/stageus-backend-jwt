@@ -169,9 +169,9 @@ router.post('/', loginAuth, postImgUploadMiddleware, async (req,res)=>{
             }
             
             //send result
-            result.state = false;
-            result.error.DB = true;
-            result.error.errorMessage = "DB 연결에 실패했습니다.";
+            result.success = false;
+            result.code = 500;
+            delete result.errorMessage;
             res.send(result);
         }
     }else{

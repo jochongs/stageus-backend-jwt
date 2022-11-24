@@ -1,12 +1,11 @@
 const router = require('express').Router();
 const pgConfig = require('../config/pg_config');
 const { Client } = require('pg');
-const logging = require('../module/logging');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
 
-// setting ====================================================
 
+// session api ====================================================
 //로그인된 사용자의 아이디
 router.get('/', (req, res) => {
     //FE로 부터 받은 값 확인
@@ -29,7 +28,7 @@ router.get('/', (req, res) => {
             //send result
             result.success = true;
             result.id = userData.id;
-            userData.authority !== null ? result.authority = 'admin' : null;
+            userData.authority !== null ? result.authority = userData.authority : null;
             res.send(result);
         }catch(err){
             //send result

@@ -10,13 +10,12 @@ const clickLogoutBtnEvent = ()=>{
     }
 }
 
-//회원 정보보기 버튼 이벤트
+//회원 정보 보기 버튼 이벤트
 const clickUserInfoBtnEvent = async ()=>{
     const token = localStorage.getItem('token');
     
-    if(token === null){
-
-    }else{
+    if(token !== null){
+        //request login auth 
         const response = await fetch(`/session`,{
             method : "GET",
             headers : {
@@ -30,6 +29,6 @@ const clickUserInfoBtnEvent = async ()=>{
         }else{
             alert('접근권한이 없습니다.');
             location.reload();
-        }
+        }   
     }
 }

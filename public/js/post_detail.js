@@ -35,7 +35,7 @@ const requestPostData = async (postIdx)=>{
         }
         const data = result.data[0];
 
-        const postAuthor = data.post_author;
+        const postAuthor = data.post_author.trim();
 
         const date = new Date(data.post_date);
         const dateDiv = document.querySelector('.date_container');
@@ -94,7 +94,7 @@ const requestCommentData = async (postIdx)=>{
             const date = new Date(commentData.comment_date);
             const contents = commentData.comment_contents;
             const commentIdx = commentData.comment_idx;
-            const commentAuthor = commentData.comment_author;
+            const commentAuthor = commentData.comment_author.trim();
             
             //댓글 내용 div
             const commentContentsDiv = document.createElement('div');
