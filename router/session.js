@@ -57,12 +57,12 @@ router.post('/', async (req, res) => {
         await client.connect();
 
         //SELECT
-        const sql = `SELECT id,authority FROM backend.account WHERE id=$1 AND pw=$2`;
+        const sql = `SELECT id, authority, login_type FROM backend.account WHERE id=$1 AND pw=$2`;
         const selectData = await client.query(sql,[idValue,pwValue]);
 
         //check id, pw
         if(selectData.rows.length === 0){
-            //send result
+            //send result ( success )
             result.success = false;
             result.code = 200;
             result.auth = false;
@@ -73,6 +73,19 @@ router.post('/', async (req, res) => {
             const name = selectData.rows[0].name;
             const nickname = selectData.rows[0].nickname;
             const authority = selectData.rows[0].authority;
+            const loginType = selectData.rows[0].login_type;
+
+            //check login type
+            if(loginType !== null){
+                //send result ( another login type )
+                result.success = false;
+                result.code = 200;
+                result.auth = false;
+                result.loginType = selectData.rows[0].login_type;
+                res.send(result);
+
+                return 0;
+            }
 
             //make token
             const token = jwt.sign(

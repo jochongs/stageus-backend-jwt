@@ -35,10 +35,14 @@ const loginEvent = async ()=>{
     })
     const result = await response.json();
 
+    console.log(result);
+
     //check result
     if(result.success){
         localStorage.setItem('token', result.token);
         location.href = document.referrer;
+    }else if(result.loginType !== undefined){
+        alert(`${result.loginType}으로 로그인 해주세요`);
     }else if(result.code === 500){
         location.href = '/page/error';
     }else{
