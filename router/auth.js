@@ -66,7 +66,7 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get('/google/callback', passport.authenticate('google', { failureRedirect : '/page/error'}), (req, res) => {
     res.redirect('/page/login');
-})
+});
 
 router.get('/', (req, res) => {
     //FE로 보낼 data
@@ -106,13 +106,15 @@ router.get('/', (req, res) => {
 
         //destroy session
         req.session.destroy((err) => {
-            console.log(err);
+            if(err){
+                console.log(err);
+            }
         })
     }else{
         //send result
         result.auth = false;
         res.send(result);
     }
-})
+});
 
 module.exports = router;
