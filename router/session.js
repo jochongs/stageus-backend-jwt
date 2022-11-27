@@ -4,6 +4,7 @@ const { Client } = require('pg');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
 const loginCookieConfig = require('../config/login_cookie_config');
+const loginCount = require('../module/login_count');
 
 // session api ====================================================
 //로그인된 사용자 정보
@@ -111,6 +112,9 @@ router.post('/', async (req, res) => {
 
             //cookie set
             res.cookie('token', token, loginCookieConfig);
+
+            //login count 
+            loginCount(id);
 
             //send result ( login success )
             result.success = true;

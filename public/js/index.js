@@ -1,6 +1,16 @@
-window.onload = ()=>{
+window.onload = async ()=>{
     getPostData();
     checkLoginState();
+
+    //request today total login count
+    const response = await fetch('/login-count');
+    const result = await response.json();
+
+    if(result.success){
+        console.log(result.data);
+    }else{
+        console.log(result);
+    }
 }
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
@@ -8,9 +18,8 @@ const checkLoginState = async () => {
     //request userData
     const response = await fetch(`/session`);
     const result = await response.json();
-
-    console.log(result);
     
+    //check result
     if(result.success){ 
         //로그인 버튼 생성
         document.querySelector('.nav_login_btn').classList.add('hidden');
@@ -59,7 +68,6 @@ const getPostData = async ()=>{
 
 //게시글을 뿌려주는 함수
 const addPostItem = (postItemArray=[])=>{
-    console.log(postItemArray);
     postItemArray.forEach((postItem,index)=>{
         const postIdx = postItem.post_idx;
         const postTitle = postItem.post_title;

@@ -7,6 +7,7 @@ const SECRET_KEY = require('../config/jwt_secret_key');
 const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 const cookieConfig = require('../config/login_cookie_config');
+const loginCount = require('../module/login_count');
 
 // passport ================================================================================
 passport.serializeUser((user, done) => {
@@ -102,6 +103,9 @@ router.get('/', (req, res) => {
         
         //set cookie
         res.cookie('token', token, cookieConfig);
+
+        //login count
+        loginCount(id);
 
         //send result
         result.success = true;
