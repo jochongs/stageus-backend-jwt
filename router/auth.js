@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
 const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
+const cookieConfig = require('../config/login_cookie_config');
 
 // passport ================================================================================
 passport.serializeUser((user, done) => {
@@ -98,9 +99,11 @@ router.get('/', (req, res) => {
                 'issuer' : "stageus"
             }
         );
+        
+        //set cookie
+        res.cookie('token', token, cookieConfig);
 
         //send result
-        result.token = token;
         result.success = true;
         res.send(result);
 

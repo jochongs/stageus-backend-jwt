@@ -1,17 +1,11 @@
 window.onload = async () => {
-    console.log(document.cookie);
-    //prepare data
-    const token = localStorage.getItem('token');
+    //auth요청
+    const response = await fetch('/auth');
+    const result = await response.json();
 
-    if(token === null){
-        //auth요청
-        const response = await fetch('/auth');
-        const result = await response.json();
-
-        if(result.success){
-            localStorage.setItem('token', result.token);
-            location.href = '/';
-        }
+    if(result.success){
+        localStorage.setItem('token', result.token);
+        location.href = '/';
     }
 }
 
