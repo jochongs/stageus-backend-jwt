@@ -67,7 +67,13 @@ const getPostData = async ()=>{
 }
 
 //게시글을 뿌려주는 함수
-const addPostItem = (postItemArray=[])=>{
+const addPostItem = (postItemArray=[]) => {
+    //remove all post item
+    document.querySelectorAll('.post_container>div').forEach((postItem) => {
+        postItem.remove();
+    })
+
+    //add post item
     postItemArray.forEach((postItem,index)=>{
         const postIdx = postItem.post_idx;
         const postTitle = postItem.post_title;
@@ -109,3 +115,18 @@ const addPostItem = (postItemArray=[])=>{
     })
 }
 
+const clickSearchBtn = async () => {
+    //prepare data
+    const keyword = document.querySelector('#search-keyword').value;
+    
+    //check keyword
+    if(keyword.length === 0){
+        alert('검색어를 입력해주세요');
+    }else{
+        //request search post
+        const response = await fetch(`/post/search?keyword=${keyword}`);
+        const result = await response.json();
+
+        addPostItem(result.data);
+    }
+}

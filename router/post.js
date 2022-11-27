@@ -9,6 +9,7 @@ const s3 = require('../module/s3');
 router.get('/:option', async (req, res) => {
     //option값 가져오기
     const option = req.params.option;
+    const searchKeyword = req.query.keyword;
 
     //FE로 보낼 값
     const result ={
@@ -16,12 +17,13 @@ router.get('/:option', async (req, res) => {
         code : 200,
         auth : true,
         data : []
-    }   
+    }
 
     //sql 준비
     let sql = "";
     let params = [];
     if(option === 'all'){
+        //post all
         sql = `SELECT 
                     DISTINCT ON 
                         (backend.post.post_idx) 
@@ -44,7 +46,38 @@ router.get('/:option', async (req, res) => {
                     backend.post.post_idx = backend.post_img_mapping.post_idx
                 ORDER BY 
                     post_idx DESC`;
+    }else if(searchKeyword?.length !== 0 && option === 'search'){
+        //search post
+        sql = `SELECT 
+                    DISTINCT ON 
+                        (backend.post.post_idx) 
+                    backend.post.post_idx,
+                    post_title,
+                    post_contents,
+                    post_date,
+                    post_author,
+                    nickname,
+                    img_path
+                FROM
+                    backend.post 
+                JOIN 
+                    backend.account 
+                ON 
+                    id=post_author
+                LEFT JOIN 
+                    backend.post_img_mapping
+                ON 
+                    backend.post.post_idx = backend.post_img_mapping.post_idx
+                WHERE
+                    post_title
+                LIKE
+                    $1
+                ORDER BY 
+                    post_idx DESC
+                `;
+        params.push(`%${searchKeyword}%`);
     }else{
+        //specific post
         sql = `SELECT 
                     post_title,
                     post_contents,

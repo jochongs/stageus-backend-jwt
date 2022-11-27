@@ -4,6 +4,7 @@ const redis = require('redis').createClient();
 router.get('/', async (req, res) => {
     //prepare data
     const date = new Date();
+    date.setHours(date.getHours() + 9);
     const today = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}`;
 
     //FE로 보내줄 데이터

@@ -3,8 +3,9 @@ const redis = require('redis').createClient();
 const loginCount = async (userId) => {
     //prepare data
     const date = new Date();
+    date.setHours(date.getHours() + 9);
     const today = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}`;
-    
+
     //connect redis
     await redis.connect();
     
@@ -23,6 +24,7 @@ const loginCount = async (userId) => {
         }
     }else{
         await redis.set(`login-${userId}-${today}`, parseInt(userTodayLoginCount) + 1);
+        await redis.expire(`login-${userId}-${today}`, 60 * 60 * 24);
     }
 
     //disconnect redis
