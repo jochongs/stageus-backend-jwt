@@ -3,7 +3,7 @@ const SECRET_KEY = require('../config/jwt_secret_key');
 
 module.exports = (req, res, next) => {
     //FE에서 받은 값
-    const token = req.headers.authorization;
+    const token = req.signedCookies.token;
 
     //FE로 보내줄 값
     const result = {

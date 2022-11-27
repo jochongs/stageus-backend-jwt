@@ -28,20 +28,19 @@ const clickSignupBtnEvent = async ()=>{
     })
     const result = await response.json();
     
+    //check result
     if(result.success){ //성공시
         alert('회원가입 성공');
         location.href = '/page/login';
+    }else if(!result.auth){
+        alert("권한이 없습니다.");
     }else{
-        if(!result.auth){
-            alert("권한이 없습니다.");
-        }else if(result.code === 500){
-            result.errorMessage.map((data)=>{
-                const div = document.createElement('div');
-                div.classList.add('error-message');
-                div.innerText = data.message;
-    
-                document.querySelector(`.${data.class}_input_container`).append(div);
-            })
-        }
+        result.errorMessage.map((data)=>{
+            const div = document.createElement('div');
+            div.classList.add('error-message');
+            div.innerText = data.message;
+
+            document.querySelector(`.${data.class}_input_container`).append(div);
+        })
     }
 }

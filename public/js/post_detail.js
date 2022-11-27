@@ -6,25 +6,12 @@ window.onload = ()=>{
 }
 
 const requestPostData = async (postIdx)=>{
-    //prepare data
-    const token = localStorage.getItem('token');
-
     //request post data
-    const response = await fetch(`/post/${postIdx}`,{
-        method : "GET",
-        headers : {
-            Authorization : token
-        }
-    });
+    const response = await fetch(`/post/${postIdx}`);
     const result = await response.json();
 
     //request user data
-    const response2 = await fetch('/session',{
-        "method" : "GET",
-        "headers" : {
-            "authorization" : token
-        }
-    });
+    const response2 = await fetch('/session');
     const result2 = await response2.json();
     console.log(result2);
 
@@ -78,15 +65,9 @@ const requestCommentData = async (postIdx)=>{
     if(result.success){
         //prepare data
         const commentDataArray = result.data;
-        const token = localStorage.getItem('token');
 
         //request user data
-        const response2 = await fetch('/session', {
-            "method" : "GET",
-            "headers" : {
-                "authorization" : token
-            }
-        });
+        const response2 = await fetch('/session');
         const result2 = await response2.json();
 
         commentDataArray.forEach((commentData, index) => {
@@ -151,15 +132,8 @@ const requestCommentData = async (postIdx)=>{
 }
 
 const checkLoginState = async () => {
-    //prepare data
-    const token = localStorage.getItem('token');
-
-    const response = await fetch('/session', {
-        method : "GET",
-        headers : {
-            Authorization : token
-        }
-    });
+    //request login state
+    const response = await fetch('/session');
     const result = await response.json();
 
     if(result.success){ //로그인이 되어있으면
@@ -197,14 +171,12 @@ const clickCommentSubmitBtnEvent = async ()=>{
     //prepare data
     const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];
     const comment = document.getElementById('comment').value;
-    const token = localStorage.getItem('token');
 
     //request add comment
     const response = await fetch(`/comment?postIdx=${postIdx}`,{
         "method" : "POST",
         "headers" : {
             "Content-Type" : "application/json",
-            "Authorization" : token
         },
         "body" : JSON.stringify({
             contents : comment,
@@ -229,14 +201,12 @@ const clickCommentSubmitBtnEvent = async ()=>{
 const clickDeleteCommentBtnEvent = async (e)=>{
     //prepare data
     const commentIdx = e.target.dataset.commentIdx;
-    const token = localStorage.getItem('token');
 
     //request delete comment
     const response = await fetch(`/comment/${commentIdx}`,{
         "method" : "DELETE",
         "headers" : {
             "Content-Type" : "application/json",
-            "authorization" : token
         }
     })
     const result = await response.json();
@@ -269,14 +239,12 @@ const clickModifyCommentBtnEvent = (e)=>{
         //prepare data
         const commentIdx = e.target.dataset.commentIdx;
         const contents = input.value;
-        const token = localStorage.getItem('token');
 
         //request comment modify
         const response = await fetch(`/comment/${commentIdx}`, {
             "method" : "PUT",
             "headers" : {
-                "Content-Type" : "application/json",
-                "authorization" : token
+                "Content-Type" : "application/json"
             },
             "body" : JSON.stringify({
                 contents : contents,
@@ -304,14 +272,12 @@ const clickModifyCommentBtnEvent = (e)=>{
 const clickDeletePostBtnEvent = async ()=>{
     //prepare data
     const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];
-    const token = localStorage.getItem('token');
 
     //request delete post data
     const response = await  fetch(`/post/${postIdx}`,{
         "method" : "DELETE",
         "headers" : {
-            "Content-Type" : "application/json",
-            "authorization" : token
+            "Content-Type" : "application/json"
         },
     })
     const result = await response.json();
@@ -355,14 +321,12 @@ const clickModifyPostBtnEvent = ()=>{
         const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];       
         const titleValue = titleInput.value;
         const contentsValue = contentsInput.value;
-        const token = localStorage.getItem('token');
         
         //request post modify
         const response = await fetch(`/post/${postIdx}`,{
             "method" : "PUT",
             "headers" : {
-                "Content-Type" : "application/json",
-                "authorization" : token
+                "Content-Type" : "application/json"
             },
             "body" : JSON.stringify({
                 title : titleValue,

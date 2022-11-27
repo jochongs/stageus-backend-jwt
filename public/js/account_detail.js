@@ -2,41 +2,22 @@ window.onload = async () => {
     checkLoginState();
     getAccountData();
     
-    const token = localStorage.getItem('token');
+    //request login auth
+    const response = await fetch('/session');
+    const result = await response.json();
 
-    if(token === null){
-        history.back();
+    if(result.success){
+        document.querySelector('.nav_login_btn').classList.add('hidden');
+        document.querySelector('.nav_logout_btn').classList.remove('hidden');
     }else{
-        //request login auth
-        const response = await fetch('/session',{
-            "method" : "GET",
-            "headers" : {
-                "authorization" : token
-            }
-        })
-        const result = await response.json();
-
-        if(result.success){
-            document.querySelector('.nav_login_btn').classList.add('hidden');
-            document.querySelector('.nav_logout_btn').classList.remove('hidden');
-        }else{
-            alert("사용자 정보를 찾을 수 없습니다.");
-            history.back();
-        }
+        alert("사용자 정보를 찾을 수 없습니다.");
+        history.back();
     }
 }
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
 const checkLoginState = async () => {
-    //get token
-    const token = localStorage.getItem('token');
-
-    const response = await fetch('/session', {
-        method : "GET",
-        headers : {
-            Authorization : token
-        }
-    });
+    const response = await fetch('/session');
     const result = await response.json();
     
     if(result.state){ //로그인을 한 경우
@@ -70,18 +51,10 @@ const checkLoginState = async () => {
 const getAccountData = async ()=>{
     //prepare data
     const userId = location.pathname.split('/')[location.pathname.split('/').length-1];
-    const token = localStorage.getItem('token');
 
     //request
-    const response = await fetch(`/account/${userId}`, {
-        method : "GET",
-        headers : {
-            Authorization : token
-        }
-    });
+    const response = await fetch(`/account/${userId}`);
     const result = await response.json();
-
-    console.log(result);
 
     if(result.success){
         //DB값 가져오기
@@ -146,8 +119,7 @@ const clickModifyUserInfoBtnEvent = ()=>{
         const response = await fetch(`/account/${usreId}`, {
             "method" : "PUT",
             "headers" : {
-                "Content-Type" : "application/json",
-                "Authorization" : localStorage.getItem("token")
+                "Content-Type" : "application/json"
             },
             "body" : JSON.stringify({
                 name : name,

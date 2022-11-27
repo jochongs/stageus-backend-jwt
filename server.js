@@ -7,6 +7,7 @@ const session = require('express-session');
 const fs = require('fs');
 const https = require('https');
 const logging = require('./module/logging');
+const cookieParser = require('cookie-parser');
 
 const sessionApi = require('./router/session');
 const pagesApi = require('./router/pages');
@@ -15,7 +16,8 @@ const postApi = require('./router/post');
 const commentApi = require('./router/comment');
 const authApi = require('./router/auth');
 const logApi = require('./router/log');
-const admin_auth_check = require('./module/admin_auth_check');
+const adminAuthCheck = require('./module/admin_auth_check');
+const loginCountApi = require('./router/login_count');
 //const testApi = require('./router/test');
 
 //설정 =========================================================================================================================================================
@@ -48,6 +50,7 @@ app.use((req,res,next)=>{ //로깅 미들웨어
     }
     next();
 });
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use("/page",pagesApi);
 app.use('/account',accountApi);
@@ -55,7 +58,8 @@ app.use('/session',sessionApi);
 app.use('/post',postApi);
 app.use('/comment',commentApi);
 app.use('/auth',authApi);
-app.use('/log', admin_auth_check, logApi);
+app.use('/log', adminAuthCheck, logApi);
+app.use('/login-count', loginCountApi);
 //app.use('/test',testApi);
 
 

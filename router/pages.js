@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const path = require('path');
-const admin_auth_check = require('../module/admin_auth_check');
 const PUBLIC_PATH = path.join(__dirname,'..','public');
 
 //로그인 페이지

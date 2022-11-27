@@ -1,34 +1,26 @@
 //로그아웃 버튼 클릭 이벤트
-const clickLogoutBtnEvent = ()=>{
-    if(localStorage.getItem('token') === null){
-        alert("이미 로그아웃 되었습니다.");
-        location.reload();
+const clickLogoutBtnEvent = async ()=>{
+    //request logout
+    const response = await fetch('/session', {
+        method : "DELETE"
+    })
+    const result = await response.json();
+
+    //check result
+    if(result.success){
+        location.href = '/';
     }else{
-        localStorage.removeItem("token");
-        alert('로그아웃 되었습니다.');
+        alert('로그아웃에 실패했습니다.');
         location.reload();
     }
 }
 
 //회원 정보 보기 버튼 이벤트
 const clickUserInfoBtnEvent = async ()=>{
-    const token = localStorage.getItem('token');
-    
-    if(token !== null){
-        //request login auth 
-        const response = await fetch(`/session`,{
-            method : "GET",
-            headers : {
-                Authorization : token
-            }
-        });
-        const result = await response.json();
-        
-        if(result.success){
-            location.href = `/page/account/${result.id}`;
-        }else{
-            alert('접근권한이 없습니다.');
-            location.reload();
-        }   
-    }
+    //request login auth 
+    const response = await fetch('/session');
+    const result = await response.json();
+
+    console.log(result);
+    location.href = `/page/account/${result.id}`;
 }

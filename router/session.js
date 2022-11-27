@@ -3,13 +3,13 @@ const pgConfig = require('../config/pg_config');
 const { Client } = require('pg');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
-
+const loginCookieConfig = require('../config/login_cookie_config');
 
 // session api ====================================================
-//로그인된 사용자의 아이디
+//로그인된 사용자 정보
 router.get('/', (req, res) => {
     //FE로 부터 받은 값 확인
-    const token = req.headers.authorization;
+    const token = req.signedCookies.token;
 
     //FE로 보내줄 값 확인
     const result = {
@@ -28,9 +28,13 @@ router.get('/', (req, res) => {
             //send result
             result.success = true;
             result.id = userData.id;
+            result.name = userData.name;
+            result.nickname = userData.nickname;
             userData.authority !== null ? result.authority = userData.authority : null;
             res.send(result);
         }catch(err){
+            console.log(err);
+
             //send result
             result.success = false;
             res.send(result);
@@ -62,7 +66,7 @@ router.post('/', async (req, res) => {
 
         //check id, pw
         if(selectData.rows.length === 0){
-            //send result ( success )
+            //send result ( inaccurate id or pw )
             result.success = false;
             result.code = 200;
             result.auth = false;
@@ -77,6 +81,9 @@ router.post('/', async (req, res) => {
 
             //check login type
             if(loginType !== null){
+                //cookie set
+                res.cookie('token', token, loginCookieConfig);
+
                 //send result ( another login type )
                 result.success = false;
                 result.code = 200;
@@ -102,7 +109,10 @@ router.post('/', async (req, res) => {
                 }
             );
 
-            //send result
+            //cookie set
+            res.cookie('token', token, loginCookieConfig);
+
+            //send result ( login success )
             result.success = true;
             result.auth = true;
             result.code = 200;
@@ -119,6 +129,36 @@ router.post('/', async (req, res) => {
     }
     
     
+})
+
+router.delete('/', async (req, res) => {
+    //FE로 받은 데이터
+    const token = req.signedCookies.token;
+
+    //FE로 보낼 데이터
+    const result = {
+        success : true,
+        auth : true,
+        code : 200
+    }
+
+    //check token
+    try{
+        const userData = jwt.verify(token, SECRET_KEY);
+
+        //clear cookie
+        res.clearCookie('token');
+
+        //send result
+        res.send(result);
+    }catch(err){
+        console.log(err);
+
+        //send result
+        result.success = false;
+        result.auth = false;
+        res.send(result);
+    }
 })
 
 module.exports = router;

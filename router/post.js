@@ -5,10 +5,6 @@ const loginAuth = require('../module/login_auth_check');
 const postImgUploadMiddleware = require('../module/post_img_upload');
 const s3 = require('../module/s3');
 
-//삭제 가능성 매우 농후
-const jwt = require('jsonwebtoken');
-const SECRET_KEY = require('../config/jwt_secret_key');
-
 //게시글 받아오기 api
 router.get('/:option', async (req, res) => {
     //option값 가져오기

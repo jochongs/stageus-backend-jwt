@@ -1,4 +1,5 @@
 window.onload = async () => {
+    console.log(document.cookie);
     //prepare data
     const token = localStorage.getItem('token');
 
@@ -22,7 +23,7 @@ const loginEvent = async ()=>{
     //에러 메시지 초기화
     errorDiv.innerHTML = "";
 
-    //request
+    //request login
     const response = await fetch('/session',{
         "method" : "POST",
         "headers" : {
@@ -35,11 +36,8 @@ const loginEvent = async ()=>{
     })
     const result = await response.json();
 
-    console.log(result);
-
     //check result
     if(result.success){
-        localStorage.setItem('token', result.token);
         location.href = document.referrer;
     }else if(result.loginType !== undefined){
         alert(`${result.loginType}으로 로그인 해주세요`);

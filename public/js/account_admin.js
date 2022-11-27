@@ -69,12 +69,7 @@ const requestLog = async (itemRemoveOption=true, page=0) => {
     }
 
     //서버에 요청
-    const request = await fetch(`/log/all?${queryString}`,{
-        method : "GET",
-        headers : {
-            "Authorization" : localStorage.getItem('token')
-        }
-    });
+    const request = await fetch(`/log/all?${queryString}`);
     const result = await request.json();
 
     console.log(result);

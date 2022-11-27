@@ -5,16 +5,8 @@ window.onload = ()=>{
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
 const checkLoginState = async () => {
-    //get token
-    const token = localStorage.getItem("token");
-
     //request userData
-    const response = await fetch(`/session`,{
-        method : "GET",
-        headers : {
-            Authorization : token
-        }
-    });
+    const response = await fetch(`/session`);
     const result = await response.json();
 
     console.log(result);

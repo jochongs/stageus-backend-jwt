@@ -4,9 +4,6 @@ const clickWriteBtnEvent = async ()=>{
     const contentsValue = document.getElementById('contents').value;
     const postImgArray = document.querySelector('.post_img_input').files;
 
-    //get token
-    const token = localStorage.getItem('token');
-
     if(postImgArray.legnth > 3){
         alert('이미지는 3개까지 올릴 수 있습니다.');
     }else{
@@ -22,13 +19,10 @@ const clickWriteBtnEvent = async ()=>{
         const response = await fetch('/post', {
             "method" : "POST",
             "headers" : {
-                "Authorization" : token
             },
             "body" : formData,
         })
         const result = await response.json();
-        
-        console.log(result);
 
         //check result
         if(result.success){

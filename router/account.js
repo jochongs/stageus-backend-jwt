@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const testRegExp = require('../module/reg_exp');
-const path = require('path');
 const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 const loginAuthCheck = require('../module/login_auth_check');
@@ -12,7 +11,7 @@ const SECRET_KEY = require('../config/jwt_secret_key');
 //모든 계정 데이터를 가져오는 API (테스트가 필요합니다.)
 router.get('/all', async (req, res) => {
     //FE로 받은 데이터
-    const token = req.headers.authorization;
+    const token = req.signedCookies.token;
 
     //FE로 보낼 데이터 준비
     const result = {
@@ -71,7 +70,7 @@ router.get('/all', async (req, res) => {
 router.get('/:userId', loginAuthCheck, async (req, res) => {
     //FE로 부터 받을  값
     const userId = req.params.userId;
-    const token = req.headers.authorization;
+    const token = req.signedCookies.token;
 
     //FE로 보내줄 값
     const result = {
@@ -251,7 +250,7 @@ router.put('/:userId', loginAuthCheck, async (req, res) => {
     const userId = req.params.userId;
     const nameValue = req.body.name;
     const nicknameValue = req.body.nickname;
-    const token = req.headers.authorization;
+    const token = req.signedCookies.token;
 
     //FE로 보내줄 값    
     const result = {
