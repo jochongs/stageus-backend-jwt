@@ -5,6 +5,8 @@ const loginAuth = require('../module/login_auth_check');
 const postImgUploadMiddleware = require('../module/post_img_upload');
 const s3 = require('../module/s3');
 
+console.log(pgConfig);
+
 //게시글 받아오기 api
 router.get('/:option', async (req, res) => {
     //option값 가져오기
@@ -155,7 +157,7 @@ router.post('/', loginAuth, postImgUploadMiddleware, async (req,res)=>{
         const client = new Client(pgConfig);
         try{
             //DB연결
-            client.connect();
+            await client.connect();
             
             //BEGIN
             await client.query('BEGIN');

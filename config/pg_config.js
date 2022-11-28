@@ -1,5 +1,4 @@
-const dotenv = require('dotenv');
-dotenv.config();
+require('dotenv').config();
 
 module.exports = {
     user : process.env.POSTGRE_USER,
