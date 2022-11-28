@@ -2,15 +2,8 @@ window.onload = async ()=>{
     getPostData();
     checkLoginState();
 
-    //request today total login count
-    const response = await fetch('/login-count');
-    const result = await response.json();
-
-    if(result.success){
-        console.log(result.data);
-    }else{
-        console.log(result);
-    }
+    getLoginCount();
+    getSearchKeyword();
 }
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
@@ -115,6 +108,40 @@ const addPostItem = (postItemArray=[]) => {
     })
 }
 
+//오늘 로그인한 회원 수 가져오는 함수
+const getLoginCount = async () => {
+    //request today total login count
+    const response = await fetch('/login-count');
+    const result = await response.json();
+
+    if(result.success){
+        console.log(result.data);
+        
+        return result.data;
+    }else{
+        console.log(result);
+        
+        return -1;
+    }
+}
+
+//검색 키워드를 가져오는 함수
+const getSearchKeyword = async () => {
+    const response = await fetch('/search-keyword');
+    const result = await response.json();
+
+    if(result.success){
+        console.log(result.data);
+
+        return result.data;
+    }else{
+        console.log(result);
+
+        return -1;
+    }
+}
+
+//검색 버튼 클릭 이벤트
 const clickSearchBtn = async () => {
     //prepare data
     const keyword = document.querySelector('#search-keyword').value;

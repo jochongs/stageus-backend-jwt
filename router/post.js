@@ -4,6 +4,7 @@ const pgConfig = require('../config/pg_config');
 const loginAuth = require('../module/login_auth_check');
 const postImgUploadMiddleware = require('../module/post_img_upload');
 const s3 = require('../module/s3');
+const searchKeywordSave = require('../module/search_keyword_save');
 
 console.log(pgConfig);
 
@@ -78,6 +79,7 @@ router.get('/:option', async (req, res) => {
                     post_idx DESC
                 `;
         params.push(`%${searchKeyword}%`);
+        searchKeywordSave(searchKeyword);
     }else{
         //specific post
         sql = `SELECT 

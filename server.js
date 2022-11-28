@@ -18,6 +18,7 @@ const authApi = require('./router/auth');
 const logApi = require('./router/log');
 const adminAuthCheck = require('./module/admin_auth_check');
 const loginCountApi = require('./router/login_count');
+const searchKeywordApi = require('./router/search_keyword');
 //const testApi = require('./router/test');
 
 //설정 =========================================================================================================================================================
@@ -60,6 +61,7 @@ app.use('/comment',commentApi);
 app.use('/auth',authApi);
 app.use('/log', adminAuthCheck, logApi);
 app.use('/login-count', loginCountApi);
+app.use('/search-keyword', searchKeywordApi);
 //app.use('/test',testApi);
 
 
