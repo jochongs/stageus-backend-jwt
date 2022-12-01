@@ -6,8 +6,6 @@ const postImgUploadMiddleware = require('../module/post_img_upload');
 const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
 
-console.log(pgConfig);
-
 //게시글 받아오기 api
 router.get('/:option', async (req, res) => {
     //option값 가져오기

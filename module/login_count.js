@@ -4,27 +4,43 @@ const loginCount = async (userId) => {
     //prepare data
     const date = new Date();
     date.setHours(date.getHours() + 9);
-    const today = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}`;
+    const todayString = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}`;
+
+    //set tomorrow ( 00 : 02 )
+    const tomorrow = new Date();
+    tomorrow.setHours(tomorrow.getHours() + 9);
+    tomorrow.setDate(date.getDate() + 1);
+    tomorrow.setHours(0);
+    tomorrow.setMinutes(2);
+    const secondDif = (tomorrow.getTime() - date.getTime()) / 1000;
+
+    console.log(`delete login data on redis after ${secondDif} || user ${userId}`);
 
     //connect redis
     await redis.connect();
     
-    //user today login check
-    const userTodayLoginCount = await redis.get(`login-${userId}-${today}`);
+    //get todayString user login
+    const userTodayLoginCount = await redis.get(`login-${userId}-${todayString}`);
+
+    //check user login state
     if(userTodayLoginCount === null){
-        await redis.set(`login-${userId}-${today}`, 1);
+        //set user login state 1
+        await redis.set(`login-${userId}-${todayString}`, 1);
+        await redis.expire(`login-${userId}-${todayString}`, secondDif);
 
-        //today total login count 
-        const todayTotalLoginCount = await redis.get(`login-total-${today}`);
+        //todayString total login count 
+        const todayTotalLoginCount = await redis.get(`login-total-${todayString}`);
 
+        //check todayString total login count existence
         if(todayTotalLoginCount === null){
-            await redis.set(`login-total-${today}`, 1);
+            await redis.set(`login-total-${todayString}`, 1);
         }else{
-            await redis.set(`login-total-${today}`, parseInt(todayTotalLoginCount) + 1);
+            await redis.set(`login-total-${todayString}`, parseInt(todayTotalLoginCount) + 1);
         }
     }else{
-        await redis.set(`login-${userId}-${today}`, parseInt(userTodayLoginCount) + 1);
-        await redis.expire(`login-${userId}-${today}`, 60 * 60 * 24);
+        //set user login count + 1
+        await redis.set(`login-${userId}-${todayString}`, parseInt(userTodayLoginCount) + 1);
+        await redis.expire(`login-${userId}-${todayString}`, secondDif);
     }
 
     //disconnect redis
