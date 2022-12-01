@@ -2,7 +2,7 @@ const router = require('express').Router();
 const {Client} = require('pg');
 const pgConfig = require('../config/pg_config');
 const loginAuthCheck = require('../module/login_auth_check');
-
+const { addNotification } = require('../module/notification');
 
 //댓글의 db데이터를 가져오는 api
 router.get('/', async (req, res) => {
@@ -47,6 +47,7 @@ router.post('/', loginAuthCheck, async (req, res) => {
     const commentAuthor = req.userData.id;
     const postIdx = req.query.postIdx;
     const contents = req.body.contents;
+    const nickname = req.userData.nickname;
 
     //FE에 보낼 값
     const result = {
@@ -72,6 +73,15 @@ router.post('/', loginAuthCheck, async (req, res) => {
             //INSERT comment
             const sql = `INSERT INTO backend.comment (comment_author,comment_contents,post_idx) VALUES ($1,$2,$3)`;
             await client.query(sql, [commentAuthor, contents, postIdx]);
+
+            //add notification
+            addNotification([{
+                code : 1,
+                user : commentAuthor,
+                idx : postIdx,
+                contents : contents,
+                nickname : nickname
+            }])
 
             //send result
             delete result.errorMessage;

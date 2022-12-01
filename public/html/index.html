@@ -18,6 +18,28 @@
                 <button class="nav_login_btn" onclick="moveLoginPage()">로그인</button>
                 <button class="nav_logout_btn hidden" onclick="clickLogoutBtnEvent()">로그아웃</button>
                 <button class="user_info_btn hidden" onclick="clickUserInfoBtnEvent()"> <img class="open_user_info_icon hidden" src="/public/source/icon/bottom_triangle_icon.svg" alt=""></button>
+                <div class="notification_btn_container hidden">
+                    <div class="new_notification_logo hidden">
+                        
+                    </div>
+                    <button class="notification_btn" onclick="clickNotificationBtnEvent()">🔔</button>
+                    <div class="notification_container hidden">
+                        <div class="close_notification_btn_container">
+                            <button class="close_notification_btn" onclick="clickCloseNotificationBtnEvent()">❌</button>
+                        </div>
+                        <div class="notification_item_container">
+                            <!-- <div class="notification_item">
+                                <div class="notification_type_contents_container">
+                                    <span class="notification_user">asdf1234</span> <span>님이 댓글을 남기셨습니다.</span>
+                                </div>
+                                <div class="notification_contents_container">
+                                    Lorem ipsum dolor, sit amet consectetur adipisicing elit. Labore assumenda perferendis quidem est esse nisi quae tenetur autem, neque aliquam. Quae nam iste magnam quia consectetur architecto tempora aliquam quaerat?
+                                </div>
+                            </div> -->
+                        </div>
+                        <button class="notification_all_remove_btn">모두 지우기</button>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>
@@ -44,7 +66,7 @@
                     <input type="text" class="board_search_input" id="search-keyword" placeholder="검색어를 입력하세요.">
                 </div>
                 <div class="board_search_submit_btn_container">
-                    <button class="board_search_submit_btn" onclick="clickSearchBtn()">검색</button>
+                    <button class="board_search_submit_btn" onclick="clickSearchBtnEvent()">검색</button>
                 </div>
             </div>
         </section>

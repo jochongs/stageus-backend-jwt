@@ -42,6 +42,98 @@ nav{
     width: 10px;
     height: 10px;
 }
+/* notification ================================================ */
+.notification_btn_container{
+    position: relative;
+}
+.notification_btn{
+    border: none;
+    width: 40px;
+    height: 40px;
+    font-size: 2rem;
+}
+.notification_container{
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, calc(100% + 20px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+    width: 240px;
+    height: 400px;
+    background-color: white;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+}
+.new_notification_logo{
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    right: 4px;
+    top: 4px;
+    background-color: red;
+}
+.close_notification_btn_container{
+    display: flex;
+    align-self: flex-end;
+    margin-top: 4px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
+.close_notification_btn{
+    border: none;
+}
+.notification_item{
+    display: flex;
+    width: calc(100% - 10px);
+    flex-direction: column;
+    align-items: center;
+    background-color: #eee;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+.notification_item_container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: scroll;
+    height: 320px;
+    width: calc(100% - 4px);
+}
+.notification_type_contents_container{
+    width: calc(100% - 4px);
+    font-size: 0.6rem;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    padding-left: 10px;
+}
+.notification_contents_container{
+    width: calc(100% - 20px);
+    background-color: white;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    padding-left: 10px;
+}
+.notification_user{
+    font-weight: bolder;
+}
+.notification_all_remove_btn{
+    position: absolute;
+    bottom: 0;  
+    border: none;
+    background-color: var(--main_color);
+    color: white;
+    margin-bottom: 10px;
+    width: calc(100% - 10px);
+    height: 30px;
+}
+
 
 @media (min-width:0px) and (max-width: 600px) {
     nav{

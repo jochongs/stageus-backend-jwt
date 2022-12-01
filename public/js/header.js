@@ -24,3 +24,13 @@ const clickUserInfoBtnEvent = async ()=>{
     console.log(result);
     location.href = `/page/account/${result.id}`;
 }
+
+//알림 버튼 클릭 이벤트
+const clickNotificationBtnEvent = async () => {
+    document.querySelector('.notification_container').classList.remove('hidden');
+}
+
+//알림 창 닫기 버튼 클릭 이벤트
+const clickCloseNotificationBtnEvent = () => {
+    document.querySelector('.notification_container').classList.add('hidden');
+}
