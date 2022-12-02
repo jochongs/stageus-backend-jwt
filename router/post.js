@@ -5,10 +5,85 @@ const loginAuth = require('../module/login_auth_check');
 const postImgUploadMiddleware = require('../module/post_img_upload');
 const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = require('../config/jwt_secret_key');
+
+//게시글 검색 api
+router.get('/search', async (req, res) => {
+    //prepare data
+    const searchKeyword = req.query.keyword;
+    let userData = null;
+    try{
+        userData = req.signedCookies.token !== undefined ? jwt.verify(req.signedCookies.token, SECRET_KEY) : null;
+    }catch{
+        userData = null;
+    }
+    
+    //FE로 보낼 값
+    const result = {
+        success : true,
+        code : 200,
+        auth : true,
+        data : []
+    }
+
+    if(userData?.id !== undefined){
+        searchKeywordSave(searchKeyword, userData.id);
+    }
+
+    try{
+        const client = new Client(pgConfig);
+        await client.connect();
+
+        //SELECT query
+        sql = `SELECT 
+                    DISTINCT ON 
+                        (backend.post.post_idx) 
+                    backend.post.post_idx,
+                    post_title,
+                    post_contents,
+                    post_date,
+                    post_author,
+                    nickname,
+                    img_path
+                FROM
+                    backend.post 
+                JOIN 
+                    backend.account 
+                ON 
+                    id=post_author
+                LEFT JOIN 
+                    backend.post_img_mapping
+                ON 
+                    backend.post.post_idx = backend.post_img_mapping.post_idx
+                WHERE
+                    post_title
+                LIKE
+                    $1
+                ORDER BY 
+                    post_idx DESC
+                `;
+        const selectData = await client.query(sql,[`%${searchKeyword}%`]);
+
+        //add search keyword
+        //searchKeywordSave(searchKeyword)
+
+        //send result
+        result.data = selectData.rows;
+        res.send(result);
+    }catch(err){
+        console.log(err)
+        
+        //res.send
+        result.success = false;
+        result.code = 500;
+        res.send(result);
+    }
+})
 
 //게시글 받아오기 api
 router.get('/:option', async (req, res) => {
-    //option값 가져오기
+    //prepare data
     const option = req.params.option;
     const searchKeyword = req.query.keyword;
 
@@ -47,37 +122,6 @@ router.get('/:option', async (req, res) => {
                     backend.post.post_idx = backend.post_img_mapping.post_idx
                 ORDER BY 
                     post_idx DESC`;
-    }else if(searchKeyword?.length !== 0 && option === 'search'){
-        //search post
-        sql = `SELECT 
-                    DISTINCT ON 
-                        (backend.post.post_idx) 
-                    backend.post.post_idx,
-                    post_title,
-                    post_contents,
-                    post_date,
-                    post_author,
-                    nickname,
-                    img_path
-                FROM
-                    backend.post 
-                JOIN 
-                    backend.account 
-                ON 
-                    id=post_author
-                LEFT JOIN 
-                    backend.post_img_mapping
-                ON 
-                    backend.post.post_idx = backend.post_img_mapping.post_idx
-                WHERE
-                    post_title
-                LIKE
-                    $1
-                ORDER BY 
-                    post_idx DESC
-                `;
-        params.push(`%${searchKeyword}%`);
-        searchKeywordSave(searchKeyword);
     }else{
         //specific post
         sql = `SELECT 

@@ -3,7 +3,8 @@ window.onload = async ()=>{
     checkLoginState();
 
     getLoginCount();
-    getSearchKeyword();
+
+    document.querySelector('.board_search_form').addEventListener('submit', submitSearchKeywordEvent);
 }
 
 //로그인 상태와 사용자의 아이디를 가져오는 함수
@@ -112,6 +113,22 @@ const addPostItem = (postItemArray=[]) => {
         })
         document.querySelector('.post_container').append(postItemDiv);
     })
+
+    setTimeout(() => {
+        //결과가 없을 경우
+        if(postItemArray.length === 0){
+            //img
+            const img = document.createElement('img');
+            img.src = 'https://static.thenounproject.com/png/2157340-200.png';
+
+            //nothing post container
+            const nothingPostContainer = document.createElement('div');
+            nothingPostContainer.classList.add('nothing_post_container');
+            nothingPostContainer.append(img);
+
+            document.querySelector('.post_container').append(nothingPostContainer);
+        }
+    }, 100)
 }
 
 //오늘 로그인한 회원 수 가져오는 함수
@@ -121,6 +138,7 @@ const getLoginCount = async () => {
     const result = await response.json();
 
     if(result.success){
+        console.log(result.data); 
         return result.data;
     }else{
         return -1;
@@ -222,8 +240,51 @@ const addNotification = (notificationArray) => {
     })
 }
 
-//검색 버튼 클릭 이벤트
-const clickSearchBtnEvent = async () => {
+//게시판 최근 검색어를 화면에 띄워주는 함수
+const addCurSearchKeyword = (keywordList) => {
+    removeCurSearchKeyword();
+    keywordList.forEach((keyword) => {
+        //span
+        const span = document.createElement('span');
+        span.innerText = keyword;
+        
+        //item
+        const curSearchItem = document.createElement('div');
+        curSearchItem.classList.add('cur_search_item');
+        curSearchItem.append(span);
+        curSearchItem.addEventListener('mousedown', async (e) => {
+            //prepare data
+            const keyword = e.currentTarget.querySelector('span').innerText;
+            
+            //display search keyword
+            document.querySelector('#search-keyword').value = keyword;
+
+            //request search post
+            const response = await fetch(`/post/search?keyword=${keyword}`);
+            const result = await response.json();
+
+            addPostItem(result.data);
+        })
+
+        //cur_search_container
+        const curSearchContainer = document.querySelector('.cur_search_container');
+        curSearchContainer.append(curSearchItem);
+    })
+}
+
+//최근 검색어를 화면에서 안보이게 하는 함수
+const removeCurSearchKeyword = () => {
+    //search item array
+    const curSearchItemArray = document.querySelectorAll('.cur_search_item');
+
+    curSearchItemArray.forEach((curSearchItem) => {
+        curSearchItem.remove();
+    })
+}
+
+//게시판 검색어 서브밋 이벤트
+const submitSearchKeywordEvent = async (e) => {
+    e.preventDefault();
     //prepare data
     const keyword = document.querySelector('#search-keyword').value;
     
@@ -236,5 +297,41 @@ const clickSearchBtnEvent = async () => {
         const result = await response.json();
 
         addPostItem(result.data);
+    }
+}
+
+//게시판 검색어 인풋태그 포커스 이벤트
+const focusSearchKeywordEvent = async () => {
+    const response = await fetch('/search-keyword');
+    const result = await response.json();
+
+    if(result.success){
+        addCurSearchKeyword(result.data);
+        console.log(result.data);
+    }
+}
+
+//게시판 검색어 인풋 태그 포커스 아웃 이벤트
+const focusOutSearchKeywordEvent = async () => {
+    setTimeout(()=>{
+        removeCurSearchKeyword();
+    }, 10)
+}
+
+//최근 검색어 입력 input event
+const inputCurSearchKeywordEvent = async () => {
+    //prepare data
+    const inputkeyword = document.querySelector('#search-keyword').value;
+
+    if(inputkeyword.length === 0){
+        const response = await fetch('/search-keyword');
+        const result = await response.json();
+
+        if(result.success){
+            addCurSearchKeyword(result.data);
+            console.log(result.data);
+        }
+    }else{
+        removeCurSearchKeyword();
     }
 }

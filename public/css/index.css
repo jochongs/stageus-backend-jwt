@@ -66,7 +66,6 @@
 /* search container =============================================== */
 .board_search_container{
     display: flex;
-    justify-content: center;
     align-items: center;
     width: 100%;
     margin-top: 40px;
@@ -75,11 +74,20 @@
     background: white;
     box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
 }
+.board_search_form{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 60px;
+    margin: 0;
+}
 .board_search_input_container{
     position: relative;
     height: 40px;
     width: calc(100% - 80px);
     background-color: #eee;
+    border-radius: 6px;
 }
 .board_search_input{
     height: 100%;
@@ -95,9 +103,37 @@
 .board_search_submit_btn{
     width: 100%;
     height: 100%;
+    border: none;
+    background-color: var(--main_color);
+    color: white;
     font-weight: bolder;
 }
 
+/* cur search =========================================================== */
+.cur_search_container{
+    position: absolute;
+    bottom: 0;  
+    left: 0;
+    transform: translate(0, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    background-color: white;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+}
+.cur_search_item{
+    display: flex;
+    align-items: center;
+    width: calc(100% - 20px);
+    height: 30px;
+    cursor: pointer;
+    padding-left: 20px;
+    user-select: none;
+}
+.cur_search_item:hover{
+    background-color: #eee;
+}
 /* post ============================================================ */
 .board_section{
     margin-top: 40px;
@@ -153,6 +189,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-height: 100%;
 }
 .post_item{
     display: flex;
@@ -160,7 +197,16 @@
     width: 100%;
     height: 30px;
 }
-
+.nothing_post_container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 556px;
+}
+.nothing_post_container img{
+    width: 40%;
+}
 @media (min-width:0px) and (max-width: 600px) {
     .page_name_container{
         margin-left: 10px;

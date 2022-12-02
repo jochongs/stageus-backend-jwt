@@ -20,20 +20,13 @@ router.get('/', async (req, res) => {
         await redis.connect();
 
         //get today login count
-        const todayTotalLoignCount = await redis.get(`login-total-${today}`);
+        result.data = await redis.SCARD(`today_login`);
 
         //disconnect redis
         await redis.disconnect();
         
-        //check today login count
-        if(todayTotalLoignCount === null){
-            //send result
-            res.send(result);
-        }else{
-            //send result
-            result.data = parseInt(todayTotalLoignCount);
-            res.send(result);            
-        }
+        //send reuslt
+        res.send(result);
     }catch(err){
         console.log(err);
         

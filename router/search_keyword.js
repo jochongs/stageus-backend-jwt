@@ -1,35 +1,55 @@
 const router = require('express').Router();
 const redis = require('redis').createClient();
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = require('../config/jwt_secret_key');
 
 router.get('/', async (req, res) => {
+    //FE에서 받은 데이터
+    const token = req.signedCookies.token;
+
     //FE로 보낼 데이터
     const result = {
         success : true,
         code : 200,
-        data : []
+        data : [],
+        auth : true
     }
 
     try{
-        //connect
-        await redis.connect();
+        const userData = jwt.verify(token, SECRET_KEY);
+        const userId = userData.id;
 
-        //get search-keyword list
-        const keywordList = await redis.lRange('search-keyword', 0, -1);
+        try{
+            //connect
+            await redis.connect();
+    
+            //get search-keyword list
+            const keywordList = await redis.zRange(`board_search_keyword-${userId}`, 0, -1);
 
-        //disconnect
-        await redis.disconnect();
+            //disconnect
+            await redis.disconnect();
+    
+            //send result
+            result.data = keywordList.reverse();
+            res.send(result);
+        }catch(err){
+            console.log(err);
+    
+            //send result
+            result.success = false;
+            result.code = 500;
+            delete result.data;
+            res.send(result);
+        }
+    }catch{
+        if(redis.isOpen){
+            await redis.disconnect();
+        }
 
-        //send result
-        result.data = keywordList;
-        res.send(result);
-    }catch(err){
-        console.log(err);
-
-        //send result
+        //send reuslt ( no auth )
         result.success = false;
-        result.code = 500;
-        delete result.data;
-        res.send(result);
+        result.code = 200;
+        result.auth = false;
     }
 })
 

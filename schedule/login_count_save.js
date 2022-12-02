@@ -13,7 +13,7 @@ const saveFunc = async ()=>{
     //prepare data
     const yesterday = new Date();
     yesterday.setHours(yesterday.getHours() + 9 - 24);
-    const yesterdayString = `${yesterday.getFullYear()}${yesterday.getMonth() + 1}${yesterday.getDate()}`;
+    const yesterdayString = `${yesterday.getFullYear()}-${yesterday.getMonth() + 1}-${yesterday.getDate()}`;
 
     try{
         //connect postgresql
@@ -22,7 +22,7 @@ const saveFunc = async ()=>{
 
         //SELECT yesterday login count
         const selectSql = 'SELECT * FROM backend.login_count WHERE date = $1';
-        const psqlLoginCount = await pgClient.query(selectSql, [`${yesterday.getFullYear()}-${yesterday.getMonth() + 1}-${yesterday.getDate()}`]);
+        const psqlLoginCount = await pgClient.query(selectSql, [yesterdayString]);
 
         //check data existence
         if(psqlLoginCount.rows.length > 0){
@@ -33,17 +33,14 @@ const saveFunc = async ()=>{
         await redis.connect();
 
         //GET yesterday total login count
-        let yesterdayTotalLoginCount = await redis.get(`login-total-${yesterdayString}`);
-        if(yesterdayTotalLoginCount === null){
-            yesterdayTotalLoginCount = 0;
-        }
+        const yesterdayTotalLoginCount = await redis.get('today_login');
 
         //INSERT
         const insertSql = 'INSERT INTO backend.login_count (date, login_count) VALUES ($1, $2)';
-        await pgClient.query(insertSql, [`${yesterday.getFullYear()}-${yesterday.getMonth() + 1}-${yesterday.getDate()}`, yesterdayTotalLoginCount]);
+        await pgClient.query(insertSql, [yesterdayString, yesterdayTotalLoginCount]);
 
-        //DELETE yesterday total login count 
-        await redis.del(`login-total-${yesterdayString}`);
+        //DEL key
+        await redis.del('today_login');
 
         //disconnect redis
         await redis.disconnect();
@@ -52,21 +49,23 @@ const saveFunc = async ()=>{
     }
 }
 
+
+
+
+
+
 //set today
 const today = new Date();
 today.setHours(today.getHours() + 9);
 
-//set tomorrow ( 00 : 01 )
+//set tomorrow ( 00 : 00 )
 const tomorrow = new Date();
 tomorrow.setHours(tomorrow.getHours() + 9);
 tomorrow.setDate(today.getDate() + 1);
 tomorrow.setHours(0);
-tomorrow.setMinutes(1);
-
-const secondDif = tomorrow.getTime() - today.getTime();
-console.log(secondDif);
+tomorrow.setMinutes(0);
 
 setTimeout(()=>{
     saveFunc();
     setInterval(saveFunc, 1000 * 60 * 60 * 24);
-}, secondDif);
+}, tomorrow.getTime() - today.getTime());

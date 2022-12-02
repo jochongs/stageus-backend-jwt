@@ -15,7 +15,7 @@
                 <h1 onclick="moveMainPage()">백엔드</h1>
             </div>
             <nav>
-                <button class="nav_login_btn" onclick="moveLoginPage()">로그인</button>
+                <button class="nav_login_btn hidden" onclick="moveLoginPage()">로그인</button>
                 <button class="nav_logout_btn hidden" onclick="clickLogoutBtnEvent()">로그아웃</button>
                 <button class="user_info_btn hidden" onclick="clickUserInfoBtnEvent()"> <img class="open_user_info_icon hidden" src="/public/source/icon/bottom_triangle_icon.svg" alt=""></button>
                 <div class="notification_btn_container hidden">
@@ -60,14 +60,21 @@
                 </div>
             </div>
         </section>
-        <section class="board_search_section">
+        <section class="board_search_section" >
             <div class="board_search_container">
-                <div class="board_search_input_container">
-                    <input type="text" class="board_search_input" id="search-keyword" placeholder="검색어를 입력하세요.">
-                </div>
-                <div class="board_search_submit_btn_container">
-                    <button class="board_search_submit_btn" onclick="clickSearchBtnEvent()">검색</button>
-                </div>
+                <form class="board_search_form">
+                    <div class="board_search_input_container">
+                        <input type="text" class="board_search_input" id="search-keyword" placeholder="검색어를 입력하세요." autocomplete="off" onfocus="focusSearchKeywordEvent()" onblur="focusOutSearchKeywordEvent()" oninput="inputCurSearchKeywordEvent()">
+                        <div class="cur_search_container">
+                            <!-- <div class="cur_search_item">
+                                <span>ㅇㅇ</span>
+                            </div> -->
+                        </div>
+                    </div>
+                    <div class="board_search_submit_btn_container">
+                        <button class="board_search_submit_btn" type="submit">검색</button>
+                    </div>
+                </form>
             </div>
         </section>
         <section class="board_section">
@@ -100,6 +107,9 @@
                         <div class="post_item_date_container">
                             2022-10-10
                         </div>
+                    </div> -->
+                    <!-- <div class="nothing_post_container">
+                        <img src="https://static.thenounproject.com/png/2157340-200.png" alt="">
                     </div> -->
                 </div>
             </div>            

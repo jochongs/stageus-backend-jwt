@@ -2,7 +2,7 @@ const redis = require('redis').createClient();
 const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 
-//알람 추가 함수
+//알람 추가 함수 (필요시 프로미스로 변경)
 const addNotification = (noticeArray) => { 
     const date = new Date();
     date.setHours(date.getHours() + 9);
@@ -86,7 +86,7 @@ const addNotification = (noticeArray) => {
         }else{
             return {
                 success : -1,
-                err : "unrealized code version"
+                err : "unrealized version (notice.code errror)"
             }
         }
     });
