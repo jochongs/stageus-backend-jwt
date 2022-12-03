@@ -38,25 +38,24 @@ const postImgUpload = multer({
     },
     //limit file size
     limits : {
-        fileSize: 1*1024*1024,
+        fileSize: 1 * 1024 * 1024,
         files : 3 
     }
 })
 
 module.exports = async (req, res, next) => {
     postImgUpload.array('postImg')(req, res, (err) => {
-        if(err){ //에러 발생 시 
+        if(err){
+            console.log(err);
+
+            //send result
             res.send({
-                state : false,
-                error : {
-                    DB : false,
-                    auth : true,
-                    errorMessage : [{
-                        message : "erorr : cannot save img on S3"
-                    }]
-                }
+                success : false,
+                code : 501,
+                auth : true,
+                message : "이미지 파일에 문제가 있습니다.",
             })
-        }else{ //저장 에러 없으면
+        }else{ 
             next();
         }
     })

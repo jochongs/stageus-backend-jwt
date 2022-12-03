@@ -7,6 +7,7 @@ const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
+const { postAdd, postModify } = require('../module/post_control');
 
 //게시글 검색 api
 router.get('/search', async (req, res) => {
@@ -85,7 +86,6 @@ router.get('/search', async (req, res) => {
 router.get('/:option', async (req, res) => {
     //prepare data
     const option = req.params.option;
-    const searchKeyword = req.query.keyword;
 
     //FE로 보낼 값
     const result ={
@@ -169,8 +169,12 @@ router.get('/:option', async (req, res) => {
 //게시글 쓰기 api
 router.post('/', loginAuth, postImgUploadMiddleware, async (req,res)=>{
     //FE로부터 값 받기
-    const {title : titleValue, contents : contentsValue, imgFileArray} = req.body;
-    const postAuthor = req.userData.id;
+    const postData = {
+        title : req.body.title,
+        contents : req.body.contents,
+        author : req.userData.id,
+        fileArray : req.files
+    }
 
     //FE로 보내줄 값
     const result = {
@@ -181,14 +185,14 @@ router.post('/', loginAuth, postImgUploadMiddleware, async (req,res)=>{
     }
 
     //body data의 입력 길이 검사
-    if(titleValue.length === 0 || titleValue.length > 32){
+    if(postData.title.length === 0 || postData.title.length > 32){
         result.success = false;   
         result.errorMessage.push({
             class : 'title',
             message : "제목의 길이는 1~32자여야 합니다."
         });
     }
-    if(contentsValue.length ===0){
+    if(postData.contents.length === 0){
         result.success = false;   
         result.errorMessage.push({
             class : 'contents',
@@ -196,72 +200,32 @@ router.post('/', loginAuth, postImgUploadMiddleware, async (req,res)=>{
         });
     }
 
-    //예외사항 없으면
-    if(result.success){        
-        const client = new Client(pgConfig);
+    //Check data exception
+    if(result.success){
+        delete result.errorMessage;
+
+        //ADD post data
         try{
-            //DB연결
-            await client.connect();
-            
-            //BEGIN
-            await client.query('BEGIN');
-
-            //INSERT post data
-            const sql = `INSERT INTO backend.post (post_title,post_contents,post_author) VALUES ($1,$2,$3) RETURNING post_idx`;
-            const valueArray = [titleValue, contentsValue, postAuthor];
-            const data = await client.query(sql, valueArray);
-
-            //INSERT post_img_path data
-            const postIdx = data.rows[0].post_idx;
-            const sql2 = `INSERT INTO backend.post_img_mapping (post_idx,img_path) VALUES ($1,$2)`;
-            for(let i = 0; i < req.files.length; i++){
-                await client.query(sql2, [postIdx, req.files[i].transforms[0].key]);
-            }
-
-            //COMMIT
-            await client.query('COMMIT');
-
-            //send result
-            delete result.error;
-            res.send(result);
+            await postAdd(postData);
         }catch(err){
             console.log(err);
 
-            //ROLLBACK
-            await client.query('ROLLBACK');
-
-            //delete img on s3
-            for(let i = 0; i < req.files.length; i++){
-                const imgPath = req.files[i].transforms[0].key;
-                try{
-                    await s3.deleteObject({
-                        Bucket: 'jochong/post', 
-                        Key: imgPath
-                    }).promise();
-                }catch(err2){
-                    console.log(err2);
-                }
-            }
-            
-            //send result
+            //set result
             result.success = false;
             result.code = 500;
-            delete result.errorMessage;
-            res.send(result);
         }
-    }else{
-        res.send(result);
     }
+    res.send(result);
 });
 
 //게시글 수정
 router.put('/:postIdx', loginAuth, async (req, res) => {
     //FE에서 받아온 데이터
     const postIdx = req.params.postIdx;
-    const titleValue = req.body.title;
-    const contentsValue = req.body.contents;
-    const authority = req.userData.authority;
-    const userId = req.userData.id;
+    const postData = {
+        title : req.body.title,
+        contents : req.body.contents
+    }
 
     //FE로 보내줄 데이터
     const result = {
@@ -272,14 +236,14 @@ router.put('/:postIdx', loginAuth, async (req, res) => {
     }
 
     //데이터 검증
-    if(titleValue.length === 0 || titleValue.length > 32){
+    if(postData.title.length === 0 || postData.contents.length > 32){
         result.success = false;
         result.errorMessage.push({
             class : "title",
             message : "제목은 0~32자여야 합니다."
         })
     }
-    if(contentsValue.length === 0){
+    if(postData.contents.length === 0){
         result.success = false;
         result.errorMessage.push({
             class : "contents",
@@ -287,44 +251,26 @@ router.put('/:postIdx', loginAuth, async (req, res) => {
         })
     }
 
+    //check data exception
     if(result.success){
-        //DB연결
-        const client = new Client(pgConfig);
+        delete result.errorMessage;
+        
+        //MODIFY post
         try{
-            await client.connect();
-
-            //SELECT post_author query for login auth check
-            const sql = `SELECT post_author FROM backend.post WHERE post_idx=$1`;
-            const selectResult = await client.query(sql, [postIdx]);
-
-            //auth check
-            if(selectResult.rows[0].post_author === userId || authority === 'admin'){
-                //UPDATE 
-                const sql2 = 'UPDATE backend.post SET post_title=$1,post_contents=$2 WHERE post_idx=$3';
-                await client.query(sql2, [titleValue, contentsValue, postIdx]);
-
-                //send result
-                delete result.errorMessage;
-                res.send(result);
-            }else{
-                //send result
-                result.success = false;
-                result.auth = false;
-                result.code = 200;
-                res.send(result);
-            }
+            await postModify(postIdx, req.userData, postData);
         }catch(err){
             console.log(err);
 
-            //send result
+            //set result
             result.success = false;
-            result.auth = true;
-            result.code = 500;
-            res.send(result);
+            result.auth = err.auth;
+            result.message = err.message;
         }
     }else{
-        res.send(result);
+        //set result (data exception)
+        result.success = false;
     }
+    res.send(result);
 })
 
 //post삭제 api
