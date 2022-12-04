@@ -7,7 +7,7 @@ const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
-const { postAdd, postModify } = require('../module/post_control');
+const { postAdd, postModify, postDelete, postGet } = require('../module/post_control');
 
 //게시글 검색 api
 router.get('/search', async (req, res) => {
@@ -83,87 +83,101 @@ router.get('/search', async (req, res) => {
 })
 
 //게시글 받아오기 api
-router.get('/:option', async (req, res) => {
-    //prepare data
-    const option = req.params.option;
-
+router.get('/all', async (req, res) => {
     //FE로 보낼 값
     const result ={
         success : true,
-        code : 200,
-        auth : true,
-        data : []
+        code : 200
     }
 
-    //sql 준비
-    let sql = "";
-    let params = [];
-    if(option === 'all'){
-        //post all
-        sql = `SELECT 
-                    DISTINCT ON 
-                        (backend.post.post_idx) 
-                    backend.post.post_idx,
-                    post_title,
-                    post_contents,
-                    post_date,
-                    post_author,
-                    nickname,
-                    img_path
-                FROM
-                    backend.post 
-                JOIN 
-                    backend.account 
-                ON 
-                    id=post_author
-                LEFT JOIN 
-                    backend.post_img_mapping
-                ON 
-                    backend.post.post_idx = backend.post_img_mapping.post_idx
-                ORDER BY 
-                    post_idx DESC`;
-    }else{
-        //specific post
-        sql = `SELECT 
-                    post_title,
-                    post_contents,
-                    post_date,post_author,
-                    nickname,
-                    img_path 
-                FROM 
-                    backend.post 
-                JOIN 
-                    backend.account 
-                ON 
-                    id=post_author 
-                LEFT JOIN 
-                    backend.post_img_mapping 
-                ON 
-                    backend.post.post_idx=backend.post_img_mapping.post_idx  
-                WHERE 
-                    backend.post.post_idx=$1`;
-        params.push(option);
-    }
-
-    //connect DB
-    const client = new Client(pgConfig);
     try{
-        await client.connect();
+        const postData = await postGet();
 
-        //SELECT post data
-        const selectData = await client.query(sql,params);
-        
-        //send result
-        result.data = selectData.rows;
-        res.send(result);
+        console.log(postData);
+
+        //set result
+        result.data = postData.data;
     }catch(err){
         console.log(err);
-
-        //res.send
+        
+        //set result
         result.success = false;
         result.code = 500;
-        res.send(result);
     }
+    
+    console.log('hi');
+    //send result
+    res.send(result);
+
+    // //sql 준비
+    // let sql = "";
+    // let params = [];
+    // if(option === 'all'){
+    //     //post all
+    //     sql = `SELECT 
+    //                 DISTINCT ON 
+    //                     (backend.post.post_idx) 
+    //                 backend.post.post_idx,
+    //                 post_title,
+    //                 post_contents,
+    //                 post_date,
+    //                 post_author,
+    //                 nickname,
+    //                 img_path
+    //             FROM
+    //                 backend.post 
+    //             JOIN 
+    //                 backend.account 
+    //             ON 
+    //                 id=post_author
+    //             LEFT JOIN 
+    //                 backend.post_img_mapping
+    //             ON 
+    //                 backend.post.post_idx = backend.post_img_mapping.post_idx
+    //             ORDER BY 
+    //                 post_idx DESC`;
+    // }else{
+    //     //specific post
+    //     sql = `SELECT 
+    //                 post_title,
+    //                 post_contents,
+    //                 post_date,post_author,
+    //                 nickname,
+    //                 img_path 
+    //             FROM 
+    //                 backend.post 
+    //             JOIN 
+    //                 backend.account 
+    //             ON 
+    //                 id=post_author 
+    //             LEFT JOIN 
+    //                 backend.post_img_mapping 
+    //             ON 
+    //                 backend.post.post_idx=backend.post_img_mapping.post_idx  
+    //             WHERE 
+    //                 backend.post.post_idx=$1`;
+    //     params.push(option);
+    // }
+
+    // //connect DB
+    // const client = new Client(pgConfig);
+    // try{
+    //     await client.connect();
+
+    //     //SELECT post data
+    //     const selectData = await client.query(sql,params);
+        
+    //     //send result
+    //     result.data = selectData.rows;
+    //     res.send(result);
+    // }catch(err){
+    //     console.log(err);
+
+    //     //res.send
+    //     result.success = false;
+    //     result.code = 500;
+    //     res.send(result);
+    // }
 })
 
 //게시글 쓰기 api
@@ -277,8 +291,6 @@ router.put('/:postIdx', loginAuth, async (req, res) => {
 router.delete('/:postIdx',loginAuth, async (req,res)=>{
     //FE에서 받은 데이터
     const postIdx = req.params.postIdx;
-    const userId = req.userData.id;
-    const userAuthority = req.userData.authority;
 
     //FE로 보내줄 데이터
     const result = {
@@ -287,66 +299,18 @@ router.delete('/:postIdx',loginAuth, async (req,res)=>{
         code : 200
     }
 
-    //DB연결
-    const client = new Client(pgConfig);
+    //DELETE post
     try{
-        await client.connect();
-
-        //select post_author, img_path 
-        const sql = `SELECT post_author, img_path FROM backend.post LEFT JOIN backend.post_img_mapping ON backend.post.post_idx = backend.post_img_mapping.post_idx WHERE backend.post.post_idx=$1`;
-        const selectData = await client.query(sql,[postIdx]);
-        const postAuthor = selectData.rows[0].post_author;
-        const imgPathArray = [];
-        if(selectData.rows[0].img_path !== null){
-            selectData.rows.forEach((row)=>{
-                imgPathArray.push(row.img_path);
-            })
-        }
-
-        //check auth
-        if(postAuthor === userId || userAuthority === 'admin'){
-            //BEGIN
-            await client.query('BEGIN');
-            
-            //DELETE post data
-            const deletePostSql = 'DELETE FROM backend.post WHERE post_idx=$1';
-            await client.query(deletePostSql,[postIdx]);
-
-            //DELETE post_img_mapping data
-            const deletePostImgMappingSql = 'DELETE FROM backend.post_img_mapping WHERE post_idx = $1';
-            await client.query(deletePostImgMappingSql,[postIdx]);
-            for(const imgPath of imgPathArray){
-                await s3.deleteObject({
-                    Bucket: 'jochong/post', 
-                    Key: imgPath
-                }).promise();
-            }
-
-            //COMMIT
-            await client.query('COMMIT');
-
-            //res.send
-            delete result.error;
-            res.send(result);
-        }else{ 
-            //send result
-            result.success = false;
-            result.auth = false;
-            result.code = 200;
-            res.send(result);
-        }
+        await postDelete(postIdx, req.userData);
     }catch(err){
         console.log(err);
 
-        //ROLLBACK
-        await client.query('ROLLBACK');
-
         //send result
         result.success = false;
-        result.auth = true;
-        result.code = 500;
-        res.send(result);
+        result.auth = err.auth;
+        result.code = err.auth ? 500 : 200
     }
+    res.send(result);
 })
 
 module.exports = router;

@@ -59,6 +59,8 @@ const getPostData = async ()=>{
     const response = await fetch('/post/all');
     const result = await response.json();
 
+    console.log(result);
+
     if(result.success){ //성공하면
         addPostItem(result.data);
     }else if(result.code === 500){ //데이터베이스 에러 발생시
