@@ -23,7 +23,7 @@ const savePostDataToEs = async () => {
         });
         
         //SELECT 
-        const selectPostDataSql = 'SELECT * FROM backend.post';
+        const selectPostDataSql = 'SELECT * FROM backend.post JOIN backend.account ON post.post_author = account.id';
         const selectQueryResult = await pgClient.query(selectPostDataSql);
         const postDataArray = selectQueryResult.rows;
 
@@ -34,13 +34,6 @@ const savePostDataToEs = async () => {
             //SELECT mapping
             const selectImgPathSql = 'SELECT * FROM backend.post_img_mapping WHERE post_idx = $1';
             const imgPathArray = await pgClient.query(selectImgPathSql, [postData.post_idx]);
-
-            //SELECT commnet 
-            const selectCommentSql = 'SELECT * FROM backend.comment WHERE post_idx = $1';
-            const selectCommentQuery = await pgClient.query(selectCommentSql, [postData.post_idx]);
-            const commentDataArray = selectCommentQuery.rows;
-
-            console.log(commentDataArray.map((comment) => {return {comment_idx : comment.comment_idx, comment_author : comment.comment_author, comment_contents : comment.comment_contents, comment_date : comment.comment_date}}));
 
             //POST data to elasticsearch
             const response = await esClient.index({
@@ -53,7 +46,7 @@ const savePostDataToEs = async () => {
                     post_author : postData.post_author,
                     post_date : new Date(postData.post_date).getTime(),
                     post_img_path : imgPathArray.rows.map((imgPathData) => imgPathData.img_path),
-                    comment : commentDataArray.map((comment) => {return {comment_idx : comment.comment_idx, comment_author : comment.comment_author, comment_contents : comment.comment_contents, comment_date : comment.comment_date}})
+                    nickname : postData.nickname
                 }
             });
 

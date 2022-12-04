@@ -51,4 +51,5 @@ const saveAccountDataToEs = async () => {
     }
 }
 
-saveAccountDataToEs();
+//saveAccountDataToEs();
+console.log('사용하지 않기로 했습니다.');

@@ -20,7 +20,7 @@ const postGet = (option = { from : 0, size : 30}) => {
                 node : "http://localhost:9200"
             });
             
-            //SEARCH
+            SEARCH
             const searchResult = await esClient.search({
                 index : 'post',
                 body : {
@@ -31,6 +31,8 @@ const postGet = (option = { from : 0, size : 30}) => {
                     size : option.size
                 }
             })
+
+            console.log(searchResult);
 
             //resolve
             resolve({
@@ -66,6 +68,11 @@ const postAdd = (postData) => {
             
             //BEGIN
             await pgClient.query("BEGIN");
+            
+            //SELECT nickname
+            const selectNicknameSql = 'SELECT nickname FROM backend.post WHERE id = $1';
+            const selectNicknameResult = await pgClient.query(selectNicknameSql, [postAuthor]);
+            const AuthorNickname = selectNicknameResult.rows[0].nickname;
 
             //INSERT post data
             const sql = `INSERT INTO backend.post (post_title,post_contents,post_author) VALUES ($1,$2,$3) RETURNING post_idx`;
@@ -91,7 +98,8 @@ const postAdd = (postData) => {
                     post_contents : contentsValue,
                     post_author : postAuthor,
                     post_date : date.getTime(),
-                    post_img_path : fileArray.map((file) => file.transforms[0].key)
+                    post_img_path : fileArray.map((file) => file.transforms[0].key),
+                    nickname : AuthorNickname
                 }
             })
             
