@@ -9,7 +9,6 @@ const pgConfig = {
     post : process.env.POSTGRE_POST
 }
 
-
 const saveCommentDataToEs = async () => {
     try{
         //CONNECT pg
@@ -32,7 +31,7 @@ const saveCommentDataToEs = async () => {
 
             //POST data to elasticsearch
             const response = await esClient.index({
-                index : 'post',
+                index : 'comment',
                 id : commentData.comment_idx,
                 body : {
                     post_idx : commentData.post_idx,
@@ -49,3 +48,5 @@ const saveCommentDataToEs = async () => {
         console.log(err);
     }
 }
+
+saveCommentDataToEs();

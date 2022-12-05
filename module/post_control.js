@@ -5,41 +5,103 @@ const searchKeywordSave = require('../module/search_keyword_save');
 const s3 = require('../module/s3');
 
 //게시글 검색하는 함수
-const postSearch = (keyword, userData={}, option) => {
-    return new Promise((resolve, reject) => {
-        
+const postSearch = (keyword, option = { search : 'post_title', size : -1 }) => {
+    return new Promise(async (resolve, reject) => {
+        try{
+            //CONNECT es
+            const esClient = new elastic.Client({
+                node : 'http://localhost:9200'
+            })
+
+            //Exists
+            const exitsResult = await esClient.indices.exists({
+                index : 'post',
+            })
+            console.log(exitsResult);
+            if(!exitsResult){
+                resolve([])
+            }
+
+            //SEARCH post
+            // const searchReuslt = await esClient.search({
+            //     index : 'post',
+            //     body : {
+            //         query : {
+            //             query_string : {
+            //                 default_field : option.search,
+            //                 query : `*${keyword}*`
+            //             }
+            //         },
+            //         from : 0,
+            //         size : option.size <= 0 ? 10 : option.size
+            //     }
+            // })
+            const searchReuslt = await esClient.search({
+                index : 'post',
+                body : {
+                    query : {
+                        term : {
+                            [option.search] : keyword
+                        }
+                    },
+                    sort : [
+                        { _score : 'desc' }
+                    ],
+                    from : 0,
+                    size : option.size <= 0 ? 10 : option.size
+                }
+            })
+
+            resolve(searchReuslt);
+        }catch(err){
+            reject({
+                err : err,
+                message : "es 에러 발생"
+            });
+        }
     })
 }
 
 //게시글 가져오는 함수
-const postGet = (option = { from : 0, size : 30}) => {
+const postGetAll = (option = { from : 0, size : 30}) => {
     return new Promise(async (resolve, reject) => {
         try{
             //CONNECT es
             const esClient = new elastic.Client({
                 node : "http://localhost:9200"
             });
-            
-            SEARCH
-            const searchResult = await esClient.search({
-                index : 'post',
-                body : {
-                    query : {
-                        match_all : {}
-                    },
-                    from : option.from,
-                    size : option.size
-                }
+
+            //EXIST
+            const exitsResult = await esClient.indices.exists({
+                index : 'post'
             })
 
-            console.log(searchResult);
-
-            //resolve
-            resolve({
-                data : searchResult.hits.hits.map((data) => {
-                    return data._source
+            //check data
+            if(exitsResult){
+                //SEARCH post ( all )
+                const searchResult = await esClient.search({
+                    index : 'post',
+                    body : {
+                        query : {
+                            match_all : {}
+                        },
+                        size : option.size,
+                        from : option.from,
+                        sort : [{
+                            post_idx : 'desc'
+                        }]
+                    }
                 })
-            })
+
+                //resolve
+                resolve({
+                    data : searchResult.hits.hits.map((data) => {
+                        return data._source
+                    })
+                })
+            }else{
+                resolve([]);
+            }
         }catch(err){
             //reject
             reject({
@@ -70,7 +132,7 @@ const postAdd = (postData) => {
             await pgClient.query("BEGIN");
             
             //SELECT nickname
-            const selectNicknameSql = 'SELECT nickname FROM backend.post WHERE id = $1';
+            const selectNicknameSql = 'SELECT nickname FROM backend.account WHERE id = $1';
             const selectNicknameResult = await pgClient.query(selectNicknameSql, [postAuthor]);
             const AuthorNickname = selectNicknameResult.rows[0].nickname;
 
@@ -232,5 +294,6 @@ module.exports = {
     postAdd : postAdd,
     postModify : postModify,
     postDelete : postDelete,
-    postGet : postGet
+    postGetAll : postGetAll,
+    postSearch : postSearch
 }

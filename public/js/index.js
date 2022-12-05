@@ -81,7 +81,7 @@ const addPostItem = (postItemArray=[]) => {
         const postTitle = postItem.post_title;
         const postAuthor = postItem.nickname; //닉네임을 표시하는 것으로 설정
         const postDate = new Date(postItem.post_date);
-        const postImg = postItem.img_path;
+        const postImg = postItem.post_img_path;
 
         const idxContainer = document.createElement('div');
         idxContainer.innerText = postIdx;
@@ -89,7 +89,7 @@ const addPostItem = (postItemArray=[]) => {
 
         const titleContainer = document.createElement('div');
         titleContainer.classList.add('post_item_title_container');
-        if(postImg !== null){
+        if(postImg.length !== 0){
             titleContainer.innerText = postTitle + ' 🖼';
         }else{
             titleContainer.innerText = postTitle;

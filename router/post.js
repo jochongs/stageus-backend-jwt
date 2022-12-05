@@ -7,19 +7,13 @@ const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
-const { postAdd, postModify, postDelete, postGet } = require('../module/post_control');
+const { postAdd, postModify, postDelete, postGetAll, postSearch } = require('../module/post_control');
 
 //게시글 검색 api
 router.get('/search', async (req, res) => {
     //prepare data
     const searchKeyword = req.query.keyword;
-    let userData = null;
-    try{
-        userData = req.signedCookies.token !== undefined ? jwt.verify(req.signedCookies.token, SECRET_KEY) : null;
-    }catch{
-        userData = null;
-    }
-    
+
     //FE로 보낼 값
     const result = {
         success : true,
@@ -28,56 +22,38 @@ router.get('/search', async (req, res) => {
         data : []
     }
 
+    //add keyword
+    let userData = null;
+    try{
+        userData = req.signedCookies.token !== undefined ? jwt.verify(req.signedCookies.token, SECRET_KEY) : null;
+    }catch{
+        userData = null;
+    }
     if(userData?.id !== undefined){
         searchKeywordSave(searchKeyword, userData.id);
     }
 
+
     try{
-        const client = new Client(pgConfig);
-        await client.connect();
-
-        //SELECT query
-        sql = `SELECT 
-                    DISTINCT ON 
-                        (backend.post.post_idx) 
-                    backend.post.post_idx,
-                    post_title,
-                    post_contents,
-                    post_date,
-                    post_author,
-                    nickname,
-                    img_path
-                FROM
-                    backend.post 
-                JOIN 
-                    backend.account 
-                ON 
-                    id=post_author
-                LEFT JOIN 
-                    backend.post_img_mapping
-                ON 
-                    backend.post.post_idx = backend.post_img_mapping.post_idx
-                WHERE
-                    post_title
-                LIKE
-                    $1
-                ORDER BY 
-                    post_idx DESC
-                `;
-        const selectData = await client.query(sql,[`%${searchKeyword}%`]);
-
-        //add search keyword
-        //searchKeywordSave(searchKeyword)
+        //search 
+        console.log(`"${searchKeyword}"(으)로 검색되었습니다.`)
+        const searchResult = await postSearch(searchKeyword);
+        const postDataArray = searchResult.length !== 0 ? searchResult.hits.hits.map(data => data._source) : [];  
+        console.log(postDataArray);
+        //console.log(searchResult.hits.hits.map(data => {return { data : data._source, score : data._score}}));
+        console.log('검색이 완료되었습니다.');
+        console.log('----------------------------');
 
         //send result
-        result.data = selectData.rows;
+        result.data = postDataArray;
         res.send(result);
     }catch(err){
-        console.log(err)
-        
-        //res.send
+        console.log(err);
+
+        //send result
         result.success = false;
         result.code = 500;
+        delete result.data;
         res.send(result);
     }
 })
@@ -91,9 +67,8 @@ router.get('/all', async (req, res) => {
     }
 
     try{
-        const postData = await postGet();
-
-        console.log(postData);
+        //get post data
+        const postData = await postGetAll();
 
         //set result
         result.data = postData.data;
@@ -105,79 +80,61 @@ router.get('/all', async (req, res) => {
         result.code = 500;
     }
     
-    console.log('hi');
     //send result
     res.send(result);
+})
 
-    // //sql 준비
-    // let sql = "";
-    // let params = [];
-    // if(option === 'all'){
-    //     //post all
-    //     sql = `SELECT 
-    //                 DISTINCT ON 
-    //                     (backend.post.post_idx) 
-    //                 backend.post.post_idx,
-    //                 post_title,
-    //                 post_contents,
-    //                 post_date,
-    //                 post_author,
-    //                 nickname,
-    //                 img_path
-    //             FROM
-    //                 backend.post 
-    //             JOIN 
-    //                 backend.account 
-    //             ON 
-    //                 id=post_author
-    //             LEFT JOIN 
-    //                 backend.post_img_mapping
-    //             ON 
-    //                 backend.post.post_idx = backend.post_img_mapping.post_idx
-    //             ORDER BY 
-    //                 post_idx DESC`;
-    // }else{
-    //     //specific post
-    //     sql = `SELECT 
-    //                 post_title,
-    //                 post_contents,
-    //                 post_date,post_author,
-    //                 nickname,
-    //                 img_path 
-    //             FROM 
-    //                 backend.post 
-    //             JOIN 
-    //                 backend.account 
-    //             ON 
-    //                 id=post_author 
-    //             LEFT JOIN 
-    //                 backend.post_img_mapping 
-    //             ON 
-    //                 backend.post.post_idx=backend.post_img_mapping.post_idx  
-    //             WHERE 
-    //                 backend.post.post_idx=$1`;
-    //     params.push(option);
-    // }
+//게시글 가져오기 API
+router.get('/:postIdx', async (req, res) => {
+    //FE에서 받은 값 준비
+    const postIdx = req.params.postIdx;
+    
+    //FE로 보낼 값
+    const result ={
+        success : true,
+        code : 200
+    }
 
-    // //connect DB
-    // const client = new Client(pgConfig);
-    // try{
-    //     await client.connect();
+    //sql 준비
+    let sql = "";
+    sql = `SELECT 
+                post_title,
+                post_contents,
+                post_date,post_author,
+                nickname,
+                img_path 
+            FROM 
+                backend.post 
+            JOIN 
+                backend.account 
+            ON 
+                id=post_author 
+            LEFT JOIN 
+                backend.post_img_mapping 
+            ON 
+                backend.post.post_idx=backend.post_img_mapping.post_idx  
+            WHERE 
+                backend.post.post_idx=$1`;
 
-    //     //SELECT post data
-    //     const selectData = await client.query(sql,params);
+    //connect DB
+    const client = new Client(pgConfig);
+    try{
+        await client.connect();
+
+        //SELECT post data
+        const selectData = await client.query(sql, [postIdx]);
         
-    //     //send result
-    //     result.data = selectData.rows;
-    //     res.send(result);
-    // }catch(err){
-    //     console.log(err);
+        //send result
+        result.data = selectData.rows;
+        res.send(result);
+    }catch(err){
+        console.log(err);
 
-    //     //res.send
-    //     result.success = false;
-    //     result.code = 500;
-    //     res.send(result);
-    // }
+        //res.send
+        result.success = false;
+        result.code = 500;
+        res.send(result);
+    }
 })
 
 //게시글 쓰기 api
