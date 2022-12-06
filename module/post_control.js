@@ -1,11 +1,12 @@
 const elastic = require('elasticsearch');
 const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
-const searchKeywordSave = require('../module/search_keyword_save');
 const s3 = require('../module/s3');
+const axios = require('axios');
 
 //게시글 검색하는 함수
-const postSearch = (keyword, option = { search : 'post_title', size : -1 }) => {
+const postSearch = async (keyword = "", option = { search : 'post_title', size : -1 }) => {
+    await addTestData(500, 'asdf1234');
     return new Promise(async (resolve, reject) => {
         try{
             //CONNECT es
@@ -13,46 +14,27 @@ const postSearch = (keyword, option = { search : 'post_title', size : -1 }) => {
                 node : 'http://localhost:9200'
             })
 
-            //Exists
+            //EXSITS
             const exitsResult = await esClient.indices.exists({
                 index : 'post',
             })
-            console.log(exitsResult);
-            if(!exitsResult){
+            if(!exitsResult || keyword === ""){
                 resolve([])
             }
-
-            //SEARCH post
-            // const searchReuslt = await esClient.search({
-            //     index : 'post',
-            //     body : {
-            //         query : {
-            //             query_string : {
-            //                 default_field : option.search,
-            //                 query : `*${keyword}*`
-            //             }
-            //         },
-            //         from : 0,
-            //         size : option.size <= 0 ? 10 : option.size
-            //     }
-            // })
-            const searchReuslt = await esClient.search({
+            
+            //SEARCH
+            const searchResult = await esClient.search({
                 index : 'post',
                 body : {
                     query : {
-                        term : {
-                            [option.search] : keyword
+                        wildcard : {
+                            [option.search] : `*${keyword}*`   
                         }
-                    },
-                    sort : [
-                        { _score : 'desc' }
-                    ],
-                    from : 0,
-                    size : option.size <= 0 ? 10 : option.size
+                    }
                 }
             })
 
-            resolve(searchReuslt);
+            resolve(searchResult);
         }catch(err){
             reject({
                 err : err,
@@ -287,6 +269,32 @@ const postDelete = (postIdx, requestUserData) => {
                 auth : true
             })
         }
+    })
+}
+
+const addTestData = (postNumber, userId = "asdf1234") => {
+    return new Promise(async (resolve, reject) => {
+        for(let i = 0; i < postNumber; i++){
+            try{
+                const response = await axios.post('https://hangul.thefron.me/api/generator');
+                const contents = response.data.ipsum;
+                const title = contents.split('.')[0]
+        
+                console.log(`${i}. : 데이터 삽입 완료 ||  "${title.substr(0,31)}"`)
+                await postAdd({
+                    title : title.substr(0,31),
+                    contents : contents,
+                    author : userId,
+                    fileArray : []
+                })
+            }catch(err){
+                i++;
+                console.log(`${i}번 째 에러 발생`);
+                reject(err);
+            }
+        }
+
+        resolve(1)
     })
 }
 

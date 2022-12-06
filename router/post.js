@@ -39,7 +39,7 @@ router.get('/search', async (req, res) => {
         console.log(`"${searchKeyword}"(으)로 검색되었습니다.`)
         const searchResult = await postSearch(searchKeyword);
         const postDataArray = searchResult.length !== 0 ? searchResult.hits.hits.map(data => data._source) : [];  
-        console.log(postDataArray);
+        //console.log(postDataArray);
         //console.log(searchResult.hits.hits.map(data => {return { data : data._source, score : data._score}}));
         console.log('검색이 완료되었습니다.');
         console.log('----------------------------');
