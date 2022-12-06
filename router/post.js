@@ -13,6 +13,9 @@ const { postAdd, postModify, postDelete, postGetAll, postSearch } = require('../
 router.get('/search', async (req, res) => {
     //prepare data
     const searchKeyword = req.query.keyword;
+    const searchSize = req.query.size === undefined ? 30 : req.query.size;
+    const searchFrom = req.query.from === undefined ? 0 : req.query.from;
+    const search = req.query.search === undefined ? 'post_title' : req.query.search
 
     //FE로 보낼 값
     const result = {
@@ -33,11 +36,10 @@ router.get('/search', async (req, res) => {
         searchKeywordSave(searchKeyword, userData.id);
     }
 
-
-    try{
-        //search 
+    //search
+    try{ 
         console.log(`"${searchKeyword}"(으)로 검색되었습니다.`)
-        const searchResult = await postSearch(searchKeyword);
+        const searchResult = await postSearch(searchKeyword, { search : search, size : searchSize, from : searchFrom });
         const postDataArray = searchResult.length !== 0 ? searchResult.hits.hits.map(data => data._source) : [];  
         //console.log(postDataArray);
         //console.log(searchResult.hits.hits.map(data => {return { data : data._source, score : data._score}}));
@@ -60,6 +62,10 @@ router.get('/search', async (req, res) => {
 
 //게시글 받아오기 api
 router.get('/all', async (req, res) => {
+    //FE에서 받은 값
+    const searchSize = req.query.size === undefined ? 30 : req.query.size;
+    const searchFrom = req.query.from === undefined ? 0 : req.query.from;
+
     //FE로 보낼 값
     const result ={
         success : true,
@@ -68,7 +74,7 @@ router.get('/all', async (req, res) => {
 
     try{
         //get post data
-        const postData = await postGetAll();
+        const postData = await postGetAll({ from : searchFrom, size : searchSize });
 
         //set result
         result.data = postData.data;

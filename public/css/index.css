@@ -134,6 +134,33 @@
 .cur_search_item:hover{
     background-color: #eee;
 }
+/* pagenation ===================================================== */
+.pagenation_section_container{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+}
+.page_number_container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bolder;
+    font-size: 2rem;
+}
+
+.pagenation-btn{
+    font-size: 2rem;
+    font-weight: bolder;
+    border: none;   
+    background-color: var(--main_color);
+    color: white;
+    width: 40px;
+    height: 40px;
+}
+.pagenation-btn-unactive{
+    opacity: 0.5;
+}
 /* post ============================================================ */
 .board_section{
     margin-top: 40px;

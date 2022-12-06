@@ -5,8 +5,7 @@ const s3 = require('../module/s3');
 const axios = require('axios');
 
 //게시글 검색하는 함수
-const postSearch = async (keyword = "", option = { search : 'post_title', size : -1 }) => {
-    await addTestData(500, 'asdf1234');
+const postSearch = async (keyword = "", option = { search : 'post_title', size : 30, from : 0 }) => {
     return new Promise(async (resolve, reject) => {
         try{
             //CONNECT es
@@ -30,7 +29,9 @@ const postSearch = async (keyword = "", option = { search : 'post_title', size :
                         wildcard : {
                             [option.search] : `*${keyword}*`   
                         }
-                    }
+                    },
+                    from : option.from * option.size,
+                    size : option.size
                 }
             })
 
@@ -48,6 +49,7 @@ const postSearch = async (keyword = "", option = { search : 'post_title', size :
 const postGetAll = (option = { from : 0, size : 30}) => {
     return new Promise(async (resolve, reject) => {
         try{
+            console.log(option.from, option.size);
             //CONNECT es
             const esClient = new elastic.Client({
                 node : "http://localhost:9200"
@@ -68,7 +70,7 @@ const postGetAll = (option = { from : 0, size : 30}) => {
                             match_all : {}
                         },
                         size : option.size,
-                        from : option.from,
+                        from : option.from * option.size,
                         sort : [{
                             post_idx : 'desc'
                         }]
@@ -269,32 +271,6 @@ const postDelete = (postIdx, requestUserData) => {
                 auth : true
             })
         }
-    })
-}
-
-const addTestData = (postNumber, userId = "asdf1234") => {
-    return new Promise(async (resolve, reject) => {
-        for(let i = 0; i < postNumber; i++){
-            try{
-                const response = await axios.post('https://hangul.thefron.me/api/generator');
-                const contents = response.data.ipsum;
-                const title = contents.split('.')[0]
-        
-                console.log(`${i}. : 데이터 삽입 완료 ||  "${title.substr(0,31)}"`)
-                await postAdd({
-                    title : title.substr(0,31),
-                    contents : contents,
-                    author : userId,
-                    fileArray : []
-                })
-            }catch(err){
-                i++;
-                console.log(`${i}번 째 에러 발생`);
-                reject(err);
-            }
-        }
-
-        resolve(1)
     })
 }
 

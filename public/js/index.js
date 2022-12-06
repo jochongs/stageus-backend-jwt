@@ -2,6 +2,7 @@ window.onload = async ()=>{
     getPostData();
     checkLoginState();
 
+    //오늘 로그인 횟수 출력
     getLoginCount();
 
     document.querySelector('.board_search_form').addEventListener('submit', submitSearchKeywordEvent);
@@ -54,18 +55,22 @@ const checkLoginState = async () => {
 }
 
 //포스트데이터를 가져오는 함수
-const getPostData = async ()=>{
-    //request post data
-    const response = await fetch('/post/all');
-    const result = await response.json();
+const getPostData = async (from = 0)=>{
+    return new Promise(async (resolve, reject) => {
+        //request post data
+        const response = await fetch(`/post/all?from=${from}`);
+        const result = await response.json();
 
-    console.log(result);
+        console.log(result);
 
-    if(result.success){ //성공하면
-        addPostItem(result.data);
-    }else if(result.code === 500){ //데이터베이스 에러 발생시
-        location.href = "/error";
-    }
+        if(result.success){ //성공하면
+            addPostItem(result.data);
+        }else if(result.code === 500){ //데이터베이스 에러 발생시
+            location.href = "/error";
+        }
+
+        resolve(1);
+    })
 }
 
 //게시글을 뿌려주는 함수
@@ -284,6 +289,16 @@ const removeCurSearchKeyword = () => {
     })
 }
 
+//현재 보고 있는 페이지네이션을 가져오는 함수
+const getPageNationNumber = () => {
+    return parseInt(document.querySelector('.page_number_container').innerText);
+}
+
+//현재 보고 있는 페이지네이션을 수정하는 함수
+const setPagenationNumber = (number) => {
+    document.querySelector('.page_number_container').innerText = number;
+}
+
 //게시판 검색어 서브밋 이벤트
 const submitSearchKeywordEvent = async (e) => {
     e.preventDefault();
@@ -320,7 +335,7 @@ const focusOutSearchKeywordEvent = async () => {
     }, 10)
 }
 
-//최근 검색어 입력 input event
+//최근 검색어 입력 input 이벤트
 const inputCurSearchKeywordEvent = async () => {
     //prepare data
     const inputkeyword = document.querySelector('#search-keyword').value;
@@ -336,4 +351,46 @@ const inputCurSearchKeywordEvent = async () => {
     }else{
         removeCurSearchKeyword();
     }
+}
+
+//페이지네이션 이전 버튼 클릭 이벤트
+const clickPagenationPreBtnEvent = async () => {
+    //prepare data
+    const searchKeyword = document.querySelector('.')
+    const pageNationNumber = getPageNationNumber();
+
+    if(pageNationNumber === 2){
+        //request post data
+        await getPostData(pageNationNumber - 1);
+
+        //set page nation number
+        setPagenationNumber(pageNationNumber - 1);
+        
+        //unactive pre btn
+        document.querySelector('.pre_btn_container button').classList.add('pagenation-btn-unactive');
+    }else if(pageNationNumber > 2){
+        //request post data
+        await getPostData(pageNationNumber - 1);
+
+        //set page nation number
+        setPagenationNumber(pageNationNumber - 1);
+    }
+    console.log(getPageNationNumber());
+}
+
+//페이지네이션 다음 버튼 클릭 이벤트
+const clickPagenationNextBtnEvent = async () => {
+    //prepare data
+    const pageNationNumber = getPageNationNumber();
+
+    //request post data
+    await getPostData(pageNationNumber);
+
+    //set page nation number
+    setPagenationNumber(pageNationNumber + 1);
+    
+    //active pre btn
+    document.querySelector('.pre_btn_container button').classList.remove('pagenation-btn-unactive');
+
+    console.log(getPageNationNumber());
 }
