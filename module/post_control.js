@@ -2,21 +2,22 @@ const elastic = require('elasticsearch');
 const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 const s3 = require('../module/s3');
-const axios = require('axios');
+const getDateRange = require('../module/get_date_range');
 
-//게시글 검색하는 함수
-const postSearch = async (keyword = "", option = { search : 'post_title', size : 30, from : 0 }) => {
+//게시글 검색하는 함수 ver. ElasticSearch
+const postSearch = (keyword = "", option = { search : 'post_title', size : 30, from : 0, dateRange : 0}) => {
+    const date = new Date(option.dateRange);
     return new Promise(async (resolve, reject) => {
         try{
             //CONNECT es
             const esClient = new elastic.Client({
                 node : 'http://localhost:9200'
-            })
+            });
 
             //EXSITS
             const exitsResult = await esClient.indices.exists({
                 index : 'post',
-            })
+            });
             if(!exitsResult || keyword === ""){
                 resolve([])
             }
@@ -26,10 +27,23 @@ const postSearch = async (keyword = "", option = { search : 'post_title', size :
                 index : 'post',
                 body : {
                     query : {
-                        wildcard : {
-                            [option.search] : `*${keyword}*`   
+                        bool : {
+                            must : [
+                                {
+                                    wildcard : {
+                                        [option.search] : `*${keyword}*`
+                                    }
+                                },
+                                {
+                                    range : {
+                                        post_date : {
+                                            gte : option.dateRange
+                                        }
+                                    }
+                                }
+                            ]
                         }
-                    },
+                    }, 
                     from : option.from * option.size,
                     size : option.size
                 }
@@ -41,6 +55,53 @@ const postSearch = async (keyword = "", option = { search : 'post_title', size :
                 err : err,
                 message : "es 에러 발생"
             });
+        }
+    })
+}
+
+const getPostOne = (postIdx) => {
+    return new Promise(async (resolve, reject) => {
+        try{
+            //CONNECT es
+            const esClient = new elastic.Client({
+                node : 'http://localhost:9200'
+            });
+
+            //EXSITS
+            const exitsResult = await esClient.indices.exists({
+                index : 'post',
+            });
+            if(!exitsResult) throw "error";
+            
+            //get one
+            const postData = await esClient.search({
+                index : 'post',
+                body : {
+                    query : {
+                        match : {
+                            post_idx : postIdx
+                        }
+                    }
+                }
+            })
+
+            resolve(postData.hits.hits[0]._source);
+        }catch(err){
+            reject(err);
+        }
+    })
+}
+
+//게시글 검색하는 함수 ver. PostgreSql
+const postSearchPsql = (keyword = "", option = { search : 'post_title', size : 30, from : 0 }) => {
+    return new Promise(async (resolve, reject) => {
+        try{
+            
+        }catch(err){
+            reject({
+                err : err,
+                message : 'psql 에러 발생'
+            })
         }
     })
 }
@@ -176,8 +237,14 @@ const postModify = (postIdx, requestUserData, postData) => {
     return new Promise(async (resolve, reject) => {
         //CONNECT psql
         const pgClient = new Client(pgConfig);
+        const esConnect = elastic.Client({
+            node : "http://localhost:9200"
+        });
         try{
             await pgClient.connect();
+            
+            //BEGIN
+            await pgClient.query('BEGIN');
 
             //SELECT post_author query for login auth check
             const sql = `SELECT post_author FROM backend.post WHERE post_idx=$1`;
@@ -185,12 +252,32 @@ const postModify = (postIdx, requestUserData, postData) => {
 
             //auth check
             if(selectResult.rows[0].post_author === requestUserData.id || requestUserData.authority === 'admin'){
-                //UPDATE 
+                //UPDATE psql
                 const sql2 = 'UPDATE backend.post SET post_title=$1,post_contents=$2 WHERE post_idx=$3';
                 await pgClient.query(sql2, [titleValue, contentsValue, postIdx]);
 
+                //UDPATE elasticsearch
+                const esUpdateResult = await esConnect.updateByQuery({
+                    index : "post",
+                    refresh: true,
+                    body : {
+                        script : {
+                            lang: "painless",
+                            post_title : titleValue,
+                            source : `ctx._source.post_contents = "${contentsValue}"; ctx._source.post_title = "${titleValue}"`
+                        },
+                        query : {
+                            match : {
+                                post_idx : postIdx
+                            }
+                        }
+                    }
+                })
+
                 //resolve
                 resolve(1);
+
+                await pgClient.query('COMMIT');
             }else{
                 //reject
                 reject({
@@ -279,5 +366,6 @@ module.exports = {
     postModify : postModify,
     postDelete : postDelete,
     postGetAll : postGetAll,
-    postSearch : postSearch
+    postSearch : postSearch,
+    getPostOne : getPostOne
 }

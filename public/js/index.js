@@ -120,21 +120,18 @@ const addPostItem = (postItemArray=[]) => {
         document.querySelector('.post_container').append(postItemDiv);
     })
 
-    setTimeout(() => {
-        //결과가 없을 경우
-        if(postItemArray.length === 0){
-            //img
-            const img = document.createElement('img');
-            img.src = 'https://static.thenounproject.com/png/2157340-200.png';
+    if(postItemArray.length === 0){
+        //img
+        const img = document.createElement('img');
+        img.src = 'https://static.thenounproject.com/png/2157340-200.png';
 
-            //nothing post container
-            const nothingPostContainer = document.createElement('div');
-            nothingPostContainer.classList.add('nothing_post_container');
-            nothingPostContainer.append(img);
+        //nothing post container
+        const nothingPostContainer = document.createElement('div');
+        nothingPostContainer.classList.add('nothing_post_container');
+        nothingPostContainer.append(img);
 
-            document.querySelector('.post_container').append(nothingPostContainer);
-        }
-    }, 100)
+        document.querySelector('.post_container').append(nothingPostContainer);
+    }
 }
 
 //오늘 로그인한 회원 수 가져오는 함수
@@ -152,17 +149,17 @@ const getLoginCount = async () => {
 }
 
 //검색 키워드를 가져오는 함수
-const getSearchKeyword = async () => {
-    const response = await fetch('/search-keyword');
-    const result = await response.json();
-
-    if(result.success){
-        console.log(result.data);
-
-        return result.data;
-    }else{
-        return -1;
-    }
+const getSearchKeywordArray = () => {
+    return new Promise(async (resolve, reject) => {
+        const response = await fetch('/search-keyword');
+        const result = await response.json();
+    
+        if(result.success){
+            resolve(result.data);
+        }else{
+            resolve([])
+        }
+    })
 }
 
 //알림 존재 여부 확인 함수
@@ -266,7 +263,7 @@ const addCurSearchKeyword = (keywordList) => {
             document.querySelector('#search-keyword').value = keyword;
 
             //request search post
-            const response = await fetch(`/post/search?keyword=${keyword}`);
+            const response = await fetch(`/post?keyword=${keyword}`);
             const result = await response.json();
 
             addPostItem(result.data);
@@ -312,10 +309,15 @@ const setPagenationNumber = (number) => {
 
 //게시판 검색 데이터를 가져오는 함수
 const getSearchPostData = async (keyword, option = { size : 30, from : 0 }) => {
+    //prepare data
+    const searchType = document.querySelector('#search-type-select').value;
+    const dateRange = document.querySelector('#date-range-select').value;
+    const db = document.querySelector('#db-select').value;
+
     return new Promise(async (resolve, reject) => {
         //request search post
         try{
-            const response = await fetch(`/post/search?keyword=${keyword}&size=${option.size}&from=${option.from}`);
+            const response = await fetch(`/post?keyword=${keyword}&size=${option.size}&from=${option.from}&date-range=${dateRange}&search-type=${searchType}&db=${db}`);
             const result = await response.json();
             
             resolve(result.data);
@@ -338,7 +340,6 @@ const submitSearchKeywordEvent = async (e) => {
 
     //prepare data
     const keyword = getKeyword();
-    console.log(`${keyword}로 검색되었습니다.`);
     
     //check keyword
     if(keyword.length === 0){
@@ -355,9 +356,11 @@ const submitSearchKeywordEvent = async (e) => {
 }
 
 //게시판 검색어 인풋태그 포커스 이벤트
-const focusSearchKeywordEvent = async () => {
+const focusSearchKeyworInputdEvent = async () => {
     const response = await fetch('/search-keyword');
     const result = await response.json();
+
+    console.log(result);
 
     if(result.success){
         addCurSearchKeyword(result.data);

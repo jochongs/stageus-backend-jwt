@@ -7,58 +7,8 @@ const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
-const { postAdd, postModify, postDelete, postGetAll, postSearch } = require('../module/post_control');
-
-//게시글 검색 api
-router.get('/search', async (req, res) => {
-    //prepare data
-    const searchKeyword = req.query.keyword;
-    const searchSize = req.query.size === undefined ? 30 : req.query.size;
-    const searchFrom = req.query.from === undefined ? 0 : req.query.from;
-    const search = req.query.search === undefined ? 'post_title' : req.query.search
-
-    //FE로 보낼 값
-    const result = {
-        success : true,
-        code : 200,
-        auth : true,
-        data : []
-    }
-
-    //add keyword
-    let userData = null;
-    try{
-        userData = req.signedCookies.token !== undefined ? jwt.verify(req.signedCookies.token, SECRET_KEY) : null;
-    }catch{
-        userData = null;
-    }
-    if(userData?.id !== undefined){
-        searchKeywordSave(searchKeyword, userData.id);
-    }
-
-    //search
-    try{ 
-        console.log(`"${searchKeyword}"(으)로 검색되었습니다.`)
-        const searchResult = await postSearch(searchKeyword, { search : search, size : searchSize, from : searchFrom });
-        const postDataArray = searchResult.length !== 0 ? searchResult.hits.hits.map(data => data._source) : [];  
-        //console.log(postDataArray);
-        //console.log(searchResult.hits.hits.map(data => {return { data : data._source, score : data._score}}));
-        console.log('검색이 완료되었습니다.');
-        console.log('----------------------------');
-
-        //send result
-        result.data = postDataArray;
-        res.send(result);
-    }catch(err){
-        console.log(err);
-
-        //send result
-        result.success = false;
-        result.code = 500;
-        delete result.data;
-        res.send(result);
-    }
-})
+const { postAdd, postModify, postDelete, postGetAll, postSearch, getPostOne } = require('../module/post_control');
+const getDateRange = require('../module/get_date_range');
 
 //게시글 받아오기 api
 router.get('/all', async (req, res) => {
@@ -96,10 +46,27 @@ router.get('/:postIdx', async (req, res) => {
     const postIdx = req.params.postIdx;
     
     //FE로 보낼 값
-    const result ={
+    const result = {
         success : true,
         code : 200
     }
+
+    try{
+        //get one
+        const postData = await getPostOne(postIdx);
+
+        //send result
+        result.data = postData;
+        res.send(result);
+    }catch(err){
+        console.log(err);
+
+        //send result
+        result.success = false;
+        result.code = 500;
+        res.send(result);
+    }
+    return
 
     //sql 준비
     let sql = "";
@@ -139,6 +106,70 @@ router.get('/:postIdx', async (req, res) => {
         //res.send
         result.success = false;
         result.code = 500;
+        res.send(result);
+    }
+})
+
+//게시글 검색 API
+router.get('/', async (req, res) => {
+    //prepare data
+    const searchKeyword = req.query.keyword;
+    const searchSize = req.query.size === undefined ? 30 : req.query.size;
+    const searchFrom = req.query.from === undefined ? 0 : req.query.from;
+    const searchDB = req.query.db === undefined ? 'elasticsearch' : req.query.db;
+    const searchDateRange = req.query['date-range'] === undefined ? 0 : getDateRange(req.query['date-range']);
+    const searchType = req.query['search-type'] === undefined ? 'post_title' : req.query['search-type'];
+
+    const searchOption = {
+        search : searchType,
+        size : searchSize,
+        from : searchFrom,
+        dateRange : searchDateRange
+    }
+
+    //FE로 보낼 값
+    const result = {
+        success : true,
+        code : 200,
+        auth : true,
+        data : []
+    }
+
+    //data check
+    if(searchKeyword === undefined){
+        //send result
+        res.send(result);
+        return;
+    }
+
+    //add keyword
+    let userData = null;
+    try{
+        userData = req.signedCookies.token !== undefined ? jwt.verify(req.signedCookies.token, SECRET_KEY) : null;
+    }catch{
+        userData = null;
+    }
+    if(userData !== null){
+        searchKeywordSave(searchKeyword, userData.id);
+    }
+
+    try{ 
+        if(searchDB === 'elasticsearch'){
+            //search post data
+            const searchResult = await postSearch(searchKeyword, searchOption);
+            result.data = searchResult.length !== 0 ? searchResult.hits.hits.map(data => data._source) : [];  
+        }else if(searchDB === 'postgre'){
+            
+        }
+        //send result
+        res.send(result);
+    }catch(err){
+        console.log(err);
+
+        //send result
+        result.success = false;
+        result.code = 500;
+        delete result.data;
         res.send(result);
     }
 })
@@ -203,6 +234,7 @@ router.put('/:postIdx', loginAuth, async (req, res) => {
         title : req.body.title,
         contents : req.body.contents
     }
+    console.log(postData.title.length);
 
     //FE로 보내줄 데이터
     const result = {
@@ -213,7 +245,7 @@ router.put('/:postIdx', loginAuth, async (req, res) => {
     }
 
     //데이터 검증
-    if(postData.title.length === 0 || postData.contents.length > 32){
+    if(postData.title.length === 0 || postData.title.length > 32){
         result.success = false;
         result.errorMessage.push({
             class : "title",

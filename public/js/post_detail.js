@@ -13,14 +13,13 @@ const requestPostData = async (postIdx)=>{
     //request user data
     const response2 = await fetch('/session');
     const result2 = await response2.json();
-    console.log(result2);
 
     if(result.success){
         if(result.data.length === 0){
             location.href = '/page/error404';
             return 0;
         }
-        const data = result.data[0];
+        const data = result.data;
 
         const postAuthor = data.post_author.trim();
 
@@ -37,12 +36,11 @@ const requestPostData = async (postIdx)=>{
         const authorDiv = document.querySelector('.author_container');
         authorDiv.innerHTML = data.nickname;
 
-        result.data.map((row,index)=>{
-            if(row.img_path !== null){
-                const img = document.createElement('img');
-                img.setAttribute('src',`https://jochong.s3.ap-northeast-2.amazonaws.com/post/${row.img_path}`);
-                document.querySelector('.contents_container').append(img);
-            }
+        //add img
+        result.data.post_img_path.forEach((postImgPath) => {
+            const img = document.createElement('img');
+            img.setAttribute('src',`https://jochong.s3.ap-northeast-2.amazonaws.com/post/${postImgPath}`);
+            document.querySelector('.contents_container').append(img);
         })
 
         if(result2?.id === postAuthor || result2.authority === 'admin'){
@@ -334,7 +332,6 @@ const clickModifyPostBtnEvent = ()=>{
             })
         })
         const result = await response.json();
-
         console.log(result);
 
         //check result

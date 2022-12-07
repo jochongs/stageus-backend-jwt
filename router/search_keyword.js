@@ -32,16 +32,15 @@ router.get('/', async (req, res) => {
             //send result
             result.data = keywordList.reverse();
             res.send(result);
-        }catch(err){
-            console.log(err);
-    
+        }catch(err){    
             //send result
             result.success = false;
             result.code = 500;
             delete result.data;
+            result.auth = false;
             res.send(result);
         }
-    }catch{
+    }catch(err){
         if(redis.isOpen){
             await redis.disconnect();
         }
@@ -50,6 +49,7 @@ router.get('/', async (req, res) => {
         result.success = false;
         result.code = 200;
         result.auth = false;
+        res.send(result);
     }
 })
 
