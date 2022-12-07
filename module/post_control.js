@@ -6,7 +6,7 @@ const getDateRange = require('../module/get_date_range');
 
 //게시글 검색하는 함수 ver. ElasticSearch
 const postSearch = (keyword = "", option = { search : 'post_title', size : 30, from : 0, dateRange : 0}) => {
-    const date = new Date(option.dateRange);
+    console.log(option.dateRange);
     return new Promise(async (resolve, reject) => {
         try{
             //CONNECT es
@@ -84,7 +84,7 @@ const getPostOne = (postIdx) => {
                     }
                 }
             })
-
+            console.log(postData.hits.hits[0]._source);
             resolve(postData.hits.hits[0]._source);
         }catch(err){
             reject(err);
@@ -110,7 +110,6 @@ const postSearchPsql = (keyword = "", option = { search : 'post_title', size : 3
 const postGetAll = (option = { from : 0, size : 30}) => {
     return new Promise(async (resolve, reject) => {
         try{
-            console.log(option.from, option.size);
             //CONNECT es
             const esClient = new elastic.Client({
                 node : "http://localhost:9200"
@@ -137,6 +136,32 @@ const postGetAll = (option = { from : 0, size : 30}) => {
                         }]
                     }
                 })
+                // const searchResult = await esClient.search({
+                //     index : 'post',
+                //     body : {
+                //         query : {
+                //             bool : {
+                //                     must : [
+                //                         {
+                //                             match_all : {}
+                //                         },
+                //                         {
+                //                             range : {
+                //                                 post_date : {
+                //                                     gte : 1670457600000
+                //                                 }
+                //                             }
+                //                         }
+                //                     ]
+                //                 }
+                //         },
+                //         size : option.size,
+                //         from : option.from * option.size,
+                //         sort : [{
+                //             post_idx : 'desc'
+                //         }]
+                //     }
+                // })
 
                 //resolve
                 resolve({

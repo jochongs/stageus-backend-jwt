@@ -9,7 +9,6 @@ module.exports = (dateRangeString) => {
         date.setSeconds(0);
         date.setMinutes(0);
         date.setMilliseconds(0);
-        console.log(date.getTime());
     }else if(dateRangeString === 'yesterday'){
         date.setDate(date.getDate() - 1);
         date.setHours(0);
