@@ -1,5 +1,6 @@
 window.onload = async ()=>{
-    getPostData();
+    const postData = await getPostData();
+    addPostItem(postData);
     checkLoginState();
 
     //오늘 로그인 횟수 출력
@@ -61,15 +62,13 @@ const getPostData = async (from = 0)=>{
         const response = await fetch(`/post/all?from=${from}`);
         const result = await response.json();
 
-        console.log(result);
+        console.log(`${from}으로 검색 완료`);
 
         if(result.success){ //성공하면
-            addPostItem(result.data);
+            resolve(result.data);
         }else if(result.code === 500){ //데이터베이스 에러 발생시
-            location.href = "/error";
+            reject([]);
         }
-
-        resolve(1);
     })
 }
 
@@ -296,24 +295,62 @@ const getPageNationNumber = () => {
 
 //현재 보고 있는 페이지네이션을 수정하는 함수
 const setPagenationNumber = (number) => {
-    document.querySelector('.page_number_container').innerText = number;
+    if(number === 1){
+        //unactive pre btn
+        document.querySelector('.pre_btn_container button').classList.add('pagenation-btn-unactive');
+
+        //set number
+        document.querySelector('.page_number_container').innerText = number;
+    }else if(number >= 2){
+        //set number
+        document.querySelector('.page_number_container').innerText = number;
+
+        //active pre btn
+        document.querySelector('.pre_btn_container button').classList.remove('pagenation-btn-unactive');
+    }
+}
+
+//게시판 검색 데이터를 가져오는 함수
+const getSearchPostData = async (keyword, option = { size : 30, from : 0 }) => {
+    return new Promise(async (resolve, reject) => {
+        //request search post
+        try{
+            const response = await fetch(`/post/search?keyword=${keyword}&size=${option.size}&from=${option.from}`);
+            const result = await response.json();
+            
+            resolve(result.data);
+        }catch(err){
+            console.log(err);
+
+            reject([]);
+        }
+    })
+}
+
+//현재 검색 키워드를 가져오는 함수
+const getKeyword = () => {
+    return document.querySelector('#search-keyword').value;
 }
 
 //게시판 검색어 서브밋 이벤트
 const submitSearchKeywordEvent = async (e) => {
     e.preventDefault();
+
     //prepare data
-    const keyword = document.querySelector('#search-keyword').value;
+    const keyword = getKeyword();
+    console.log(`${keyword}로 검색되었습니다.`);
     
     //check keyword
     if(keyword.length === 0){
         alert('검색어를 입력해주세요');
     }else{
-        //request search post
-        const response = await fetch(`/post/search?keyword=${keyword}`);
-        const result = await response.json();
+        //get post data with search keyword
+        const searchPostData = await getSearchPostData(keyword, { from : getPageNationNumber() - 1, size : 30 });
 
-        addPostItem(result.data);
+        //set page nation number
+        setPagenationNumber(1);
+
+        addPostItem(searchPostData);
     }
 }
 
@@ -356,41 +393,46 @@ const inputCurSearchKeywordEvent = async () => {
 //페이지네이션 이전 버튼 클릭 이벤트
 const clickPagenationPreBtnEvent = async () => {
     //prepare data
-    const searchKeyword = document.querySelector('.')
-    const pageNationNumber = getPageNationNumber();
+    const searchKeyword = getKeyword();
+    const pageNationNumber = getPageNationNumber() - 1;
+    if(pageNationNumber === 0) return;
 
-    if(pageNationNumber === 2){
+    if(searchKeyword.length === 0){  //전체 검색
         //request post data
-        await getPostData(pageNationNumber - 1);
+        const postData = await getPostData(pageNationNumber - 1);
+        addPostItem(postData);
+    
+        //set page nation number
+        setPagenationNumber(pageNationNumber);
+    }else{   //키워드 검색
+        //request post data with keyword
+        const searchPostData = await getSearchPostData(searchKeyword, { from : pageNationNumber - 1, size : 30 });
+        addPostItem(searchPostData);
 
         //set page nation number
-        setPagenationNumber(pageNationNumber - 1);
-        
-        //unactive pre btn
-        document.querySelector('.pre_btn_container button').classList.add('pagenation-btn-unactive');
-    }else if(pageNationNumber > 2){
-        //request post data
-        await getPostData(pageNationNumber - 1);
-
-        //set page nation number
-        setPagenationNumber(pageNationNumber - 1);
+        setPagenationNumber(pageNationNumber);
     }
-    console.log(getPageNationNumber());
 }
 
 //페이지네이션 다음 버튼 클릭 이벤트
 const clickPagenationNextBtnEvent = async () => {
     //prepare data
     const pageNationNumber = getPageNationNumber();
+    const searchKeyword = getKeyword();
 
-    //request post data
-    await getPostData(pageNationNumber);
+    if(searchKeyword.length === 0){ //get all post data
+        //request post data
+        const postData = await getPostData(pageNationNumber);
+        addPostItem(postData);
 
-    //set page nation number
-    setPagenationNumber(pageNationNumber + 1);
-    
-    //active pre btn
-    document.querySelector('.pre_btn_container button').classList.remove('pagenation-btn-unactive');
+        //set page nation number
+        setPagenationNumber(pageNationNumber + 1);
+    }else{  //get post data with search keyword
+        //request post data
+        const postData = await getSearchPostData(searchKeyword, { from : pageNationNumber, size : 30 });
+        addPostItem(postData);
 
-    console.log(getPageNationNumber());
+        //set pagenatio number
+        setPagenationNumber(pageNationNumber + 1);
+    }
 }

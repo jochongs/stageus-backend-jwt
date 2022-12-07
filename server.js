@@ -75,7 +75,6 @@ app.get('*',(req,res,next)=>{
         next();
     }else{
         const des = "https://" + req.hostname + ":443" + req.url;
-        console.log('리다이렉트 됨');
         res.redirect(des);
     }
 })
