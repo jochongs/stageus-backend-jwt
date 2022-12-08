@@ -3,12 +3,27 @@ const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 const loginAuthCheck = require('../module/login_auth_check');
 const { addNotification } = require('../module/notification');
-const { commentGet, commentAdd, commentModify, commentDelete } = require('../module/comment_control');
+const { commentGet, commentAdd, commentModify, commentDelete, commentSearch } = require('../module/comment_control');
+const getDateRange = require('../module/get_date_range');
+
 
 //댓글의 db데이터를 가져오는 api
 router.get('/', async (req, res) => {
     //FE로 받을 데이터
     const postIdx = req.query.postIdx;
+    const searchKeyword = req.query.keyword === undefined ? "" : req.query.keyword;
+    const searchSize = req.query.size === undefined ? 30 : req.query.size;
+    const searchFrom = req.query.from === undefined ? 0 : req.query.from;
+    const searchDB = req.query.db === undefined ? 'elasticsearch' : req.query.db;
+    const searchDateRange = req.query['date-range'] === undefined ? 0 : getDateRange(req.query['date-range']);
+    const searchType = req.query['search-type'] === undefined ? 'post_title' : req.query['search-type'];
+
+    const searchOption = {
+        search : searchType,
+        size : searchSize,
+        from : searchFrom,
+        dateRange : searchDateRange
+    }
 
     //FE로 보내줄 데이터
     const result = {
@@ -19,12 +34,17 @@ router.get('/', async (req, res) => {
     }
 
     try{
-        //get commnet data on Elasticsearch
-        const searchResult = await commentGet(postIdx);
+        if(postIdx !== undefined){
+            //get commnet data on Elasticsearch
+            const searchResult = await commentGet(postIdx);
 
-        //set result ( success )
-        result.data = searchResult;
-        delete result.error;
+            //set result ( success )
+            result.data = searchResult;
+            delete result.error;
+        }else{
+            const commentData = await commentSearch(searchKeyword, searchOption);
+            result.data = commentData;
+        }
     }catch(err){
         console.log(err);
 

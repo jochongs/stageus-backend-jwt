@@ -185,7 +185,7 @@ const clickCommentSubmitBtnEvent = async ()=>{
 
     //check reuslt
     if(result.success){
-        //location.reload();
+        location.reload();
     }else if(result.code === 500){
         location.href = '/page/error';
     }else if(!result.auth){

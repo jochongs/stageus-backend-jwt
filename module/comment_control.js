@@ -42,7 +42,7 @@ const commentGet = (postIdx, searchFor = 'post_idx') => {
     })
 }
 
-//게시글 추가 함수
+//댓글 추가 함수
 const commentAdd = (commentData) => {
     const commentAuthor = commentData.commentAuthor;
     const commentContents = commentData.commentContents;
@@ -100,7 +100,7 @@ const commentAdd = (commentData) => {
     })
 }
 
-//게시글 수정 함수
+//댓글 수정 함수
 const commentModify = (commentIdx, userData, commentData) => {
     //prepare data
     const commentContents = commentData.contents
@@ -167,6 +167,7 @@ const commentModify = (commentIdx, userData, commentData) => {
     })
 }
 
+//댓글 삭제 함수
 const commentDelete = (commentIdx, userData) => {
     return new Promise(async (resolve, reject) => {
         //connect psql
@@ -224,9 +225,67 @@ const commentDelete = (commentIdx, userData) => {
         }
     })
 }
+
+//댓글 검색 함수
+const commentSearch = (keyword, option = { search : 'post_contents', size : 30, from : 0, dateRange : 0}) => {
+    return new Promise(async (resolve, reject) => {
+        try{
+            //connect es
+            const esClient = new elastic.Client({
+                node : 'http://localhost:9200'
+            });
+
+            //check index
+            const exitsResult = await esClient.indices.exists({
+                index : 'comment',
+            });
+            if(!exitsResult || keyword === ""){
+                resolve([])
+            }
+
+            //search
+            const searchResult = await esClient.search({
+                index : 'comment',
+                body : {
+                    query : {
+                        bool : {
+                            must : [
+                                {
+                                    wildcard : {
+                                        [option.search] : `*${keyword}*`
+                                    }
+                                },
+                                {
+                                    range : {
+                                        comment_date : {
+                                            gte : option.dateRange
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }, 
+                    from : option.from * option.size,
+                    size : option.size,
+                    sort : [{
+                        comment_date : 'desc'
+                    }]
+                }
+            })
+            console.log(searchResult);
+
+            //resolve
+            resolve(searchResult.hits.total.value !== 0 ? searchResult.hits.hits.map(hits => hits._source) : []);
+        }catch(err){
+            //reject
+            reject(err);
+        }
+    })  
+}
 module.exports = {
     commentGet : commentGet,
     commentAdd : commentAdd,
     commentModify : commentModify,
-    commentDelete : commentDelete
+    commentDelete : commentDelete,
+    commentSearch : commentSearch
 }

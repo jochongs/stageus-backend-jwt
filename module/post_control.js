@@ -7,7 +7,7 @@ const s3 = require('../module/s3');
 const postSearch = (keyword = "", option = { search : 'post_title', size : 30, from : 0, dateRange : 0}) => {
     return new Promise(async (resolve, reject) => {
         try{
-            //CONNECT es
+            //connect es
             const esClient = new elastic.Client({
                 node : 'http://localhost:9200'
             });
@@ -50,7 +50,7 @@ const postSearch = (keyword = "", option = { search : 'post_title', size : 30, f
                 }
             })
 
-            resolve(searchResult);
+            resolve(searchResult.hits.total.value !== 0 ? searchResult.hits.hits.map(data => data._source) : []);
         }catch(err){
             reject({
                 err : err,

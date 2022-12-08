@@ -62,8 +62,6 @@ const getPostData = async (from = 0)=>{
         const response = await fetch(`/post/all?from=${from}`);
         const result = await response.json();
 
-        console.log(`${from}으로 검색 완료`);
-
         if(result.success){ //성공하면
             resolve(result.data);
         }else if(result.code === 500){ //데이터베이스 에러 발생시
@@ -142,7 +140,6 @@ const getLoginCount = async () => {
     const result = await response.json();
 
     if(result.success){
-        console.log(result.data); 
         return result.data;
     }else{
         return -1;
@@ -175,8 +172,6 @@ const checkNotification = async (userId) => {
             document.querySelector('.new_notification_logo').classList.remove('hidden');
             
             addNotification(result.data);
-
-            console.log(result.data);
         }  
     }
 }
@@ -316,16 +311,39 @@ const getSearchPostData = async (keyword, option = { size : 30, from : 0 }) => {
     const db = document.querySelector('#db-select').value;
 
     return new Promise(async (resolve, reject) => {
-        //request search post
-        try{
-            const response = await fetch(`/post?keyword=${keyword}&size=${option.size}&from=${option.from}&date-range=${dateRange}&search-type=${searchType}&db=${db}`);
-            const result = await response.json();
-            
-            resolve(result.data);
-        }catch(err){
-            console.log(err);
+        if(searchType === 'comment_contents'){
+            try{
+                const response = await fetch(`/comment?keyword=${keyword}&size=${option.size}&from=${option.from}&date-range=${dateRange}&search-type=${searchType}&db=${db}`);
+                const result = await response.json();
+    
+                const commentDataArray = result.data.map((data) => {
+                    return {
+                        post_idx : data.post_idx,
+                        post_title : `댓글 : ${data.comment_contents}`,
+                        nickname : data.nickname.trim(),
+                        post_date : data.comment_date,
+                        post_img_path : [],
+                    }
+                })
+                console.log(commentDataArray);
+                resolve(commentDataArray);
+            }catch(err){
+                console.log(err);
 
-            reject([]);
+                reject([]);
+            }
+        }else{
+            //request search post
+            try{
+                const response = await fetch(`/post?keyword=${keyword}&size=${option.size}&from=${option.from}&date-range=${dateRange}&search-type=${searchType}&db=${db}`);
+                const result = await response.json();
+                
+                resolve(result.data);
+            }catch(err){
+                console.log(err);
+
+                reject([]);
+            }
         }
     })
 }
@@ -361,11 +379,8 @@ const focusSearchKeyworInputdEvent = async () => {
     const response = await fetch('/search-keyword');
     const result = await response.json();
 
-    console.log(result);
-
     if(result.success){
         addCurSearchKeyword(result.data);
-        console.log(result.data);
     }
 }
 

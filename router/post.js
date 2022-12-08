@@ -122,7 +122,7 @@ router.get('/', async (req, res) => {
         if(searchDB === 'elasticsearch'){
             //search post data
             const searchResult = await postSearch(searchKeyword, searchOption);
-            result.data = searchResult.length !== 0 ? searchResult.hits.hits.map(data => data._source) : [];  
+            result.data = searchResult;  
         }else if(searchDB === 'postgre'){
             //search post data (psql)
             const searchResult = await postSearchPsql(searchKeyword, searchOption);
