@@ -54,6 +54,7 @@ const postAdd = (postData) => {
             }
             await esConnect.index({
                 index : 'post',
+                id : postIdx,
                 body : {
                     post_idx : postIdx,
                     post_title : titleValue,

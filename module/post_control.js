@@ -2,7 +2,6 @@ const elastic = require('elasticsearch');
 const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 const s3 = require('../module/s3');
-const getDateRange = require('../module/get_date_range');
 
 //게시글 검색하는 함수 ver. ElasticSearch
 const postSearch = (keyword = "", option = { search : 'post_title', size : 30, from : 0, dateRange : 0}) => {
@@ -13,7 +12,7 @@ const postSearch = (keyword = "", option = { search : 'post_title', size : 30, f
                 node : 'http://localhost:9200'
             });
 
-            //EXSITS
+            //check index
             const exitsResult = await esClient.indices.exists({
                 index : 'post',
             });
@@ -77,7 +76,7 @@ const getPostOne = (postIdx) => {
             if(!exitsResult) throw "error";
             
             //get one
-            const postData = await esClient.search({
+            const searchResult = await esClient.search({
                 index : 'post',
                 body : {
                     query : {
@@ -88,7 +87,12 @@ const getPostOne = (postIdx) => {
                 }
             })
 
-            resolve(postData.hits.hits[0]._source);
+            //404 check
+            if(searchResult.hits.total.value === 0){
+                resolve(404);
+            }else{
+                resolve(searchResult.hits.hits[0]?._source);
+            }
         }catch(err){
             reject(err);
         }
@@ -126,16 +130,14 @@ const postSearchPsql = (keyword = "", option = { search : 'post_title', size : 3
                         $3
                     `;
 
-        //const sql2 = `SELECT * FROM backend.post WHERE ${option.search} LIKE '%${keyword}%' OFFSET 0 LIMIT 30`
 
-        //connect DB
+        //connect psql
         const client = new Client(pgConfig);
         try{
             await client.connect();
 
             //SELECT post data
             const selectData = await client.query(sql, [ `%${keyword}%`, option.from, option.size]);
-            console.log(selectData.rows);
             resolve(selectData.rows);
         }catch(err){
             console.log(err);
@@ -149,12 +151,12 @@ const postSearchPsql = (keyword = "", option = { search : 'post_title', size : 3
 const postGetAll = (option = { from : 0, size : 30}) => {
     return new Promise(async (resolve, reject) => {
         try{
-            //CONNECT es
+            //connect es
             const esClient = new elastic.Client({
                 node : "http://localhost:9200"
             });
 
-            //EXIST
+            //check index
             const exitsResult = await esClient.indices.exists({
                 index : 'post'
             })
@@ -206,10 +208,15 @@ const postAdd = (postData) => {
     date.setHours(date.getHours() + 9);
 
     return new Promise(async (resolve, reject) => {
-        //CONNECT psql
         const pgClient = new Client(pgConfig);
         try{
+            //connect psql
             await pgClient.connect();
+
+            //connect ES
+            const esClient = elastic.Client({
+                node : "http://localhost:9200"
+            });
             
             //BEGIN
             await pgClient.query("BEGIN");
@@ -232,11 +239,9 @@ const postAdd = (postData) => {
             }
 
             //INSERT post data to ES
-            const esConnect = elastic.Client({
-                node : "http://localhost:9200"
-            });
-            await esConnect.index({
+            await esClient.index({
                 index : 'post',
+                id : postIdx,
                 body : {
                     post_idx : postIdx,
                     post_title : titleValue,
@@ -273,29 +278,41 @@ const postModify = (postIdx, requestUserData, postData) => {
     const contentsValue = postData.contents;
 
     return new Promise(async (resolve, reject) => {
-        //CONNECT psql
+        //connect psql
         const pgClient = new Client(pgConfig);
-        const esConnect = elastic.Client({
+
+        //connect elasticsearch
+        const esClient = elastic.Client({
             node : "http://localhost:9200"
         });
+
         try{
             await pgClient.connect();
             
             //BEGIN
             await pgClient.query('BEGIN');
 
-            //SELECT post_author query for login auth check
-            const sql = `SELECT post_author FROM backend.post WHERE post_idx=$1`;
-            const selectResult = await pgClient.query(sql, [postIdx]);
+            //search post_author
+            const searchResult = await esClient.search({
+                index : 'post',
+                body : {
+                    query : {
+                        match : {
+                            post_idx : postIdx
+                        }
+                    }
+                }
+            })
+            const postAuthor = searchResult.hits.hits[0]._source.post_author;
 
             //auth check
-            if(selectResult.rows[0].post_author === requestUserData.id || requestUserData.authority === 'admin'){
+            if(postAuthor === requestUserData.id || requestUserData.authority === 'admin'){
                 //UPDATE psql
                 const sql2 = 'UPDATE backend.post SET post_title=$1,post_contents=$2 WHERE post_idx=$3';
                 await pgClient.query(sql2, [titleValue, contentsValue, postIdx]);
 
                 //UDPATE elasticsearch
-                const esUpdateResult = await esConnect.updateByQuery({
+                const esUpdateResult = await esClient.updateByQuery({
                     index : "post",
                     refresh: true,
                     body : {
@@ -347,17 +364,23 @@ const postDelete = (postIdx, requestUserData) => {
                 node : 'http://localhost:9200'
             });
 
-            //SELECT post_author, img_path 
-            const selectSql = `SELECT post_author, img_path FROM backend.post LEFT JOIN backend.post_img_mapping ON backend.post.post_idx = backend.post_img_mapping.post_idx WHERE backend.post.post_idx=$1`;
-            const selectData = await pgClient.query(selectSql,[postIdx]);
-            const postAuthor = selectData.rows[0].post_author;
-            const imgPathArray = [];
-            if(selectData.rows[0].img_path !== null){
-                selectData.rows.map((row) => {
-                    imgPathArray.push(row.img_path);
-                })
-            }
+            const searchResult = await esClient.search({
+                index : 'post',
+                body : {
+                    query : {
+                        match : {
+                            post_idx : postIdx
+                        }
+                    }
+                }
+            })
+            const postAuthor = searchResult.hits.hits[0]._source.post_author;
 
+            //SELECT img mapping
+            const sql = 'SELECT * FROM backend.post_img_mapping WHERE post_idx = $1';
+            const selectResult = await pgClient.query(sql, [postIdx]);
+            const imgPathArray = selectResult.rows.map(data => data.img_path);
+            
             //auth check
             if(postAuthor === requestUserData.id || requestUserData.authority === 'admin'){
                 //BEGIN

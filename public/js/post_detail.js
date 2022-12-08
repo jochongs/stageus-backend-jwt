@@ -46,10 +46,10 @@ const requestPostData = async (postIdx)=>{
         if(result2?.id === postAuthor || result2.authority === 'admin'){
             document.querySelector('.post_detail_btn_container').classList.remove('hidden');
         }
+    }else if(result.code === 404){
+        location.href = '/page/error404'; 
     }else{
-        if(result.DB){
-            location.href = "/page/error";
-        }
+        location.href = '/page/error';
     }
 }
 
@@ -57,8 +57,6 @@ const requestCommentData = async (postIdx)=>{
     //request comment data
     const response = await fetch(`/comment?postIdx=${postIdx}`);
     const result = await response.json();
-
-    console.log(result);
 
     if(result.success){
         //prepare data
@@ -71,6 +69,7 @@ const requestCommentData = async (postIdx)=>{
         commentDataArray.forEach((commentData, index) => {
             const author = commentData.nickname;
             const date = new Date(commentData.comment_date);
+            date.setHours(date.getHours() - 9);
             const contents = commentData.comment_contents;
             const commentIdx = commentData.comment_idx;
             const commentAuthor = commentData.comment_author.trim();
@@ -186,7 +185,7 @@ const clickCommentSubmitBtnEvent = async ()=>{
 
     //check reuslt
     if(result.success){
-        location.reload();
+        //location.reload();
     }else if(result.code === 500){
         location.href = '/page/error';
     }else if(!result.auth){

@@ -33,6 +33,7 @@ const saveCommentDataToEs = async () => {
             const response = await esClient.index({
                 index : 'comment',
                 id : commentData.comment_idx,
+                routing : commentData.post_idx,
                 body : {
                     comment_idx : commentData.comment_idx,
                     post_idx : commentData.post_idx,

@@ -55,17 +55,24 @@ router.get('/:postIdx', async (req, res) => {
         //get one
         const postData = await getPostOne(postIdx);
 
-        //send result
-        result.data = postData;
-        res.send(result);
+        if(postData === 404){
+            //set result ( 404 )
+            result.success = false;
+            result.code = 404;
+        }else{
+            //send result ( success )
+            result.data = postData;
+        }
     }catch(err){
         console.log(err);
 
-        //send result
+        //set result ( error )
         result.success = false;
         result.code = 500;
-        res.send(result);
     }
+
+    //send result
+    res.send(result);
 })
 
 //게시글 검색 API
@@ -194,7 +201,6 @@ router.put('/:postIdx', loginAuth, async (req, res) => {
         title : req.body.title,
         contents : req.body.contents
     }
-    console.log(postData.title.length);
 
     //FE로 보내줄 데이터
     const result = {
