@@ -34,6 +34,7 @@ const saveCommentDataToEs = async () => {
                 index : 'comment',
                 id : commentData.comment_idx,
                 body : {
+                    comment_idx : commentData.comment_idx,
                     post_idx : commentData.post_idx,
                     comment_contents : commentData.comment_contents,
                     comment_author : commentData.comment_author,

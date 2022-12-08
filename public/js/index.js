@@ -80,13 +80,13 @@ const addPostItem = (postItemArray=[]) => {
     })
 
     //add post item
-    postItemArray.forEach((postItem,index)=>{
+    postItemArray.forEach((postItem, index) => {
         const postIdx = postItem.post_idx;
         const postTitle = postItem.post_title;
         const postAuthor = postItem.nickname; //닉네임을 표시하는 것으로 설정
         const postDate = new Date(postItem.post_date);
         postDate.setHours(postDate.getHours() - 9);
-        const postImg = postItem.post_img_path;
+        const postImg = postItem.post_img_path === undefined ? postItem.img_path === null ? [] : postItem.img_path : postItem.post_img_path;
 
         const idxContainer = document.createElement('div');
         idxContainer.innerText = postIdx;

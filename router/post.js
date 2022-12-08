@@ -7,7 +7,7 @@ const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
-const { postAdd, postModify, postDelete, postGetAll, postSearch, getPostOne } = require('../module/post_control');
+const { postAdd, postModify, postDelete, postGetAll, postSearch, getPostOne, postSearchPsql } = require('../module/post_control');
 const getDateRange = require('../module/get_date_range');
 
 //게시글 받아오기 api
@@ -66,48 +66,6 @@ router.get('/:postIdx', async (req, res) => {
         result.code = 500;
         res.send(result);
     }
-    return
-
-    //sql 준비
-    let sql = "";
-    sql = `SELECT 
-                post_title,
-                post_contents,
-                post_date,post_author,
-                nickname,
-                img_path 
-            FROM 
-                backend.post 
-            JOIN 
-                backend.account 
-            ON 
-                id=post_author 
-            LEFT JOIN 
-                backend.post_img_mapping 
-            ON 
-                backend.post.post_idx=backend.post_img_mapping.post_idx  
-            WHERE 
-                backend.post.post_idx=$1`;
-
-    //connect DB
-    const client = new Client(pgConfig);
-    try{
-        await client.connect();
-
-        //SELECT post data
-        const selectData = await client.query(sql, [postIdx]);
-        
-        //send result
-        result.data = selectData.rows;
-        res.send(result);
-    }catch(err){
-        console.log(err);
-
-        //res.send
-        result.success = false;
-        result.code = 500;
-        res.send(result);
-    }
 })
 
 //게시글 검색 API
@@ -159,7 +117,9 @@ router.get('/', async (req, res) => {
             const searchResult = await postSearch(searchKeyword, searchOption);
             result.data = searchResult.length !== 0 ? searchResult.hits.hits.map(data => data._source) : [];  
         }else if(searchDB === 'postgre'){
-            
+            //search post data (psql)
+            const searchResult = await postSearchPsql(searchKeyword, searchOption);
+            result.data = searchResult;
         }
         //send result
         res.send(result);

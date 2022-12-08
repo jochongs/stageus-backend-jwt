@@ -2,7 +2,7 @@ const axios = require('axios');
 const elastic = require('elasticsearch');
 const { Client } = require('pg');
 const userId = 'asdf1234';
-const postNumber = 10000000; // 10,000,000 ( 천만 )
+const postNumber = 3000000; // 3,000,000 ( 300만 )
 require('dotenv').config({ path : '../.env'});
 const pgConfig = {
     user : process.env.POSTGRE_USER,

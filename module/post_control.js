@@ -6,7 +6,6 @@ const getDateRange = require('../module/get_date_range');
 
 //게시글 검색하는 함수 ver. ElasticSearch
 const postSearch = (keyword = "", option = { search : 'post_title', size : 30, from : 0, dateRange : 0}) => {
-    console.log(option.dateRange);
     return new Promise(async (resolve, reject) => {
         try{
             //CONNECT es
@@ -45,7 +44,10 @@ const postSearch = (keyword = "", option = { search : 'post_title', size : 30, f
                         }
                     }, 
                     from : option.from * option.size,
-                    size : option.size
+                    size : option.size,
+                    sort : [{
+                        post_idx : 'desc'
+                    }]
                 }
             })
 
@@ -59,6 +61,7 @@ const postSearch = (keyword = "", option = { search : 'post_title', size : 30, f
     })
 }
 
+//게시글 한개를 가져오는 함수
 const getPostOne = (postIdx) => {
     return new Promise(async (resolve, reject) => {
         try{
@@ -84,7 +87,7 @@ const getPostOne = (postIdx) => {
                     }
                 }
             })
-            console.log(postData.hits.hits[0]._source);
+
             resolve(postData.hits.hits[0]._source);
         }catch(err){
             reject(err);
@@ -95,13 +98,49 @@ const getPostOne = (postIdx) => {
 //게시글 검색하는 함수 ver. PostgreSql
 const postSearchPsql = (keyword = "", option = { search : 'post_title', size : 30, from : 0 }) => {
     return new Promise(async (resolve, reject) => {
+        //sql 준비
+        const sql = `SELECT 
+                        post_title,
+                        post_contents,
+                        post_date,post_author,
+                        nickname,
+                        img_path,
+                        backend.post.post_idx
+                    FROM 
+                        backend.post 
+                    JOIN 
+                        backend.account 
+                    ON 
+                        id = post_author 
+                    LEFT JOIN 
+                        backend.post_img_mapping 
+                    ON 
+                        backend.post.post_idx = backend.post_img_mapping.post_idx  
+                    WHERE 
+                        ${option.search}
+                    LIKE 
+                        $1
+                    OFFSET
+                        $2
+                    LIMIT 
+                        $3
+                    `;
+
+        //const sql2 = `SELECT * FROM backend.post WHERE ${option.search} LIKE '%${keyword}%' OFFSET 0 LIMIT 30`
+
+        //connect DB
+        const client = new Client(pgConfig);
         try{
-            
+            await client.connect();
+
+            //SELECT post data
+            const selectData = await client.query(sql, [ `%${keyword}%`, option.from, option.size]);
+            console.log(selectData.rows);
+            resolve(selectData.rows);
         }catch(err){
-            reject({
-                err : err,
-                message : 'psql 에러 발생'
-            })
+            console.log(err);
+            
+            reject(err);
         }
     })
 }
@@ -136,32 +175,6 @@ const postGetAll = (option = { from : 0, size : 30}) => {
                         }]
                     }
                 })
-                // const searchResult = await esClient.search({
-                //     index : 'post',
-                //     body : {
-                //         query : {
-                //             bool : {
-                //                     must : [
-                //                         {
-                //                             match_all : {}
-                //                         },
-                //                         {
-                //                             range : {
-                //                                 post_date : {
-                //                                     gte : 1670457600000
-                //                                 }
-                //                             }
-                //                         }
-                //                     ]
-                //                 }
-                //         },
-                //         size : option.size,
-                //         from : option.from * option.size,
-                //         sort : [{
-                //             post_idx : 'desc'
-                //         }]
-                //     }
-                // })
 
                 //resolve
                 resolve({
@@ -329,6 +342,11 @@ const postDelete = (postIdx, requestUserData) => {
         try{
             await pgClient.connect();
 
+            //CONNECT es
+            const esClient = new elastic.Client({
+                node : 'http://localhost:9200'
+            });
+
             //SELECT post_author, img_path 
             const selectSql = `SELECT post_author, img_path FROM backend.post LEFT JOIN backend.post_img_mapping ON backend.post.post_idx = backend.post_img_mapping.post_idx WHERE backend.post.post_idx=$1`;
             const selectData = await pgClient.query(selectSql,[postIdx]);
@@ -361,6 +379,31 @@ const postDelete = (postIdx, requestUserData) => {
                     }).promise();
                 }
 
+                //DELETE post data on elasticsearch
+                const delPostResult = await esClient.deleteByQuery({
+                    index : 'post',
+                    body : {
+                        query : {
+                            match : {
+                                post_idx : postIdx
+                            }
+                        }
+                    }
+                });
+
+                //DELETE comment data on elasticsearch ( 테스트가 필요합니다. )
+                const delCommentResult = await esClient.deleteByQuery({
+                    index : 'comment',
+                    body : {
+                        query : {
+                            match : {
+                                post_idx : postIdx
+                            }
+                        }
+                    }
+                })
+                console.log(delCommentResult);
+
                 //COMMIT
                 await pgClient.query('COMMIT');
 
@@ -392,5 +435,6 @@ module.exports = {
     postDelete : postDelete,
     postGetAll : postGetAll,
     postSearch : postSearch,
-    getPostOne : getPostOne
+    getPostOne : getPostOne,
+    postSearchPsql : postSearchPsql
 }
