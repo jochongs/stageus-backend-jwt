@@ -315,6 +315,8 @@ const getSearchPostData = async (keyword, option = { size : 30, from : 0 }) => {
             try{
                 const response = await fetch(`/comment?keyword=${keyword}&size=${option.size}&from=${option.from}&date-range=${dateRange}&search-type=${searchType}&db=${db}`);
                 const result = await response.json();
+
+                console.log(result);
     
                 const commentDataArray = result.data.map((data) => {
                     return {
@@ -328,9 +330,7 @@ const getSearchPostData = async (keyword, option = { size : 30, from : 0 }) => {
                 console.log(commentDataArray);
                 resolve(commentDataArray);
             }catch(err){
-                console.log(err);
-
-                reject([]);
+                reject(err);
             }
         }else{
             //request search post

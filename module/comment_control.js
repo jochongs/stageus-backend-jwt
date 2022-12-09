@@ -295,10 +295,33 @@ const commentSearch = (keyword, option = { search : 'post_contents', size : 30, 
         }
     })  
 }
+
+//댓글 가져오는 함수 ( ver psql )
+const commentSearchPsql = (keyword, option = { search : 'post_title', size : 30, from : 0 }) => {
+    return new Promise(async (resolve, reject) => {
+        const pgClient = new Client(pgConfig);
+        try{
+            //connect psql
+            await pgClient.connect();
+
+            //SELECT
+            const selectSql = 'SELECT post_idx, comment_contents, nickname, comment_date FROM backend.comment JOIN backend.account ON comment_author = id WHERE comment_contents LIKE $1 OFFSET $2 LIMIT $3';
+            const selectResult = await pgClient.query(selectSql, [`%${keyword}%`, option.from, option.size]);
+
+            //resolve
+            resolve(selectResult.rows);
+        }catch(err){
+            //reject
+            reject(err);
+        }
+    });
+}
+
 module.exports = {
     commentGet : commentGet,
     commentAdd : commentAdd,
     commentModify : commentModify,
     commentDelete : commentDelete,
-    commentSearch : commentSearch
+    commentSearch : commentSearch,
+    commentSearchPsql : commentSearchPsql
 }

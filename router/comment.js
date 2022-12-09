@@ -3,7 +3,7 @@ const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 const loginAuthCheck = require('../module/login_auth_check');
 const { addNotification } = require('../module/notification');
-const { commentGet, commentAdd, commentModify, commentDelete, commentSearch } = require('../module/comment_control');
+const { commentGet, commentAdd, commentModify, commentDelete, commentSearch, commentSearchPsql } = require('../module/comment_control');
 const getDateRange = require('../module/get_date_range');
 
 
@@ -42,8 +42,16 @@ router.get('/', async (req, res) => {
             result.data = searchResult;
             delete result.error;
         }else{
-            const commentData = await commentSearch(searchKeyword, searchOption);
-            result.data = commentData;
+            if(searchDB === 'elasticsearch'){
+                //get search result from elasticsearch
+                const commentData = await commentSearch(searchKeyword, searchOption);
+                result.data = commentData;   
+            }else{
+                //get search result from psql 
+                const commentData = await commentSearchPsql(searchKeyword, searchOption);
+                console.log(commentData);
+                result.data = commentData;
+            }
         }
     }catch(err){
         console.log(err);

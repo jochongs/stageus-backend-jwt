@@ -56,6 +56,8 @@ const getAccountData = async ()=>{
     const response = await fetch(`/account/${userId}`);
     const result = await response.json();
 
+    console.log(result);
+
     if(result.success){
         //DB값 가져오기
         const data = result.data[0];
@@ -84,6 +86,8 @@ const getAccountData = async ()=>{
 
 //수정하기 버튼 클릭 이벤트 
 const clickModifyUserInfoBtnEvent = ()=>{   
+    alert('현재 닉네임은 변경할 수 없습니다.');
+    return
     const nameInput = document.createElement('input');
     nameInput.classList.add('modify_name_input');
     nameInput.classList.add('modify-input');

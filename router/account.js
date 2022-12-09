@@ -4,8 +4,8 @@ const { Client } = require('pg');
 const pgConfig = require('../config/pg_config');
 const loginAuthCheck = require('../module/login_auth_check');
 const jwt = require('jsonwebtoken');
-
 const SECRET_KEY = require('../config/jwt_secret_key');
+const { accountGet, accountModify } = require('../module/account_control');
 
 //api ===============================================================================
 //모든 계정 데이터를 가져오는 API (테스트가 필요합니다.)
@@ -70,60 +70,37 @@ router.get('/all', async (req, res) => {
 router.get('/:userId', loginAuthCheck, async (req, res) => {
     //FE로 부터 받을  값
     const userId = req.params.userId;
-    const token = req.signedCookies.token;
+    const userData = req.userData;
 
     //FE로 보내줄 값
     const result = {
-        success : false,
-        data : [],
-        auth : false,
-        code : 500
+        success : true,
+        auth : true,
+        code : 200
     }
-    
+
+    //auth check
     try{
-        //check token
-        const userData = jwt.verify(token, SECRET_KEY);
-        
-        //권한 확인
-        if(userData.id === userId || userData.authority === 'admin'){   
-            //DB연결
-            const client = new Client(pgConfig);
-            try{
-                await client.connect();
+        if(userData.id === userId || userData.authority === 'admin'){
+            //get user data
+            const getUserData = await accountGet(userId);
 
-                //SELECT
-                const sql = 'SELECT id,name,nickname FROM backend.account WHERE id=$1';
-                const selectData = await client.query(sql,[userId]);
-
-                //send result
-                result.success = true;
-                result.data = selectData.rows;
-                result.code = 200;
-                result.auth = true;
-                res.send(result);
-            }catch(err){
-                console.log(err);
-
-                //send result
-                result.success = false;
-                result.code = 500;
-                result.auth = true;
-                delete result.data;
-                res.send(result);
-            }
+            //set result
+            result.data = getUserData;
         }else{
-            throw "no auth";
+            //set result ( no auth )
+            result.success = false;
+            result.code = 401;
+            result.auth = false;
         }
     }catch(err){
         console.log(err);
 
-        //send reuslt
+        //send result
         result.success = false;
-        result.code = 200;
-        result.auth = false;
-        delete result.data;
-        res.send(result);
+        result.code = 500;
     }
+    res.send(result);
 })
 
 //회원정보 시도 api (회원가입 api)
@@ -248,16 +225,16 @@ router.post('/', async (req, res) => {
 router.put('/:userId', loginAuthCheck, async (req, res) => {
     //FE에서 받은 값
     const userId = req.params.userId;
+    const userData = req.userData;
     const nameValue = req.body.name;
     const nicknameValue = req.body.nickname;
-    const token = req.signedCookies.token;
 
     //FE로 보내줄 값    
     const result = {
         success : true,
         errorMessage : [],
-        auth : false,
-        code : 500,
+        auth : true,
+        code : 200,
     }
 
     //Input 예외처리
@@ -275,53 +252,28 @@ router.put('/:userId', loginAuthCheck, async (req, res) => {
             message : "닉네임 형식이 맞지 않습니다."
         })
     }
-
-    //input 예외에 걸렸는지 확인
     if(result.success){
+        delete result.errorMessage;
+
         try{
-            //check token
-            const userData = jwt.verify(token, SECRET_KEY);
-
-            //check authority 
-            if(userId === userData.id || userData.authority === 'admin'){
-                const client = new Client(pgConfig);
-                try{
-
-                    await client.connect();
-                    //UPDATE
-                    const sql = `UPDATE backend.account SET name=$1 ,nickname=$2 WHERE id=$3`;
-                    const params = [nameValue,nicknameValue,userId];
-                    await client.query(sql,params);
-
-                    //send result
-                    result.success = true;
-                    delete result.errorMessage;
-                    result.auth = true;
-                    result.code = 200;
-                    res.send(result);
-                }catch(err){
-                    console.log(err);
-
-                    //send result;
-                    result.success = false;
-                    result.auth = true;
-                    result.code = 500;
-                    delete result.errorMessage;
-                }
+            if(userData.id === userId || userData.authority === 'admin'){
+                //modify
+                //await accountModify(userData, nameValue, nicknameValue);
             }else{
-                throw "no auth";
+                //set result ( no auth )
+                result.success = false;
+                result.auth = false;
+                result.code = 401;
             }
         }catch(err){
-            //send result
+            console.log(err);
+
+            //set result ( server error )
             result.success = false;
-            result.auth = false;
-            delete result.errorMessage;
-            result.code = 200;
-            res.send(result);
+            result.code = 500;
         }
-    }else{
-        res.send(result);
     }
+    res.send(result);
 })
 
 module.exports = router;

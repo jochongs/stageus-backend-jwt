@@ -318,7 +318,6 @@ const postModify = (postIdx, requestUserData, postData) => {
                     body : {
                         script : {
                             lang: "painless",
-                            post_title : titleValue,
                             source : `ctx._source.post_contents = "${contentsValue}"; ctx._source.post_title = "${titleValue}"`
                         },
                         query : {
