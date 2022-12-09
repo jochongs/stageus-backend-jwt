@@ -19,7 +19,7 @@ const commentGet = (postIdx, searchFor = 'post_idx') => {
                 resolve([])
             }
 
-            //GET comment
+            //get comment
             const searchResult = await esClient.search({
                 index : 'comment',
                 body : {
@@ -33,7 +33,20 @@ const commentGet = (postIdx, searchFor = 'post_idx') => {
                     }]
                 }
             })
+
+            //get comment
             const commentData = searchResult.hits.hits.map((hits) => hits._source);
+            const getResult = await esClient.search({
+                index : 'comment',
+                body : {
+                    query : {
+                        match : {
+                            _routing : postIdx
+                        }
+                    }
+                }
+            })
+            console.log(getResult.hits.hits);
             
             resolve(commentData);
         }catch(err){
