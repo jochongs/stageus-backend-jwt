@@ -49,12 +49,9 @@ module.exports = async (req, res, next) => {
             console.log(err);
 
             //send result
-            res.send({
-                success : false,
-                code : 501,
-                auth : true,
-                message : "이미지 파일에 문제가 있습니다.",
-            })
+            res.status(400).send({
+                message : 'file size is too much large'
+            });
         }else{ 
             next();
         }

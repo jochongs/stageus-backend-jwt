@@ -1,4 +1,9 @@
 module.exports = (dateRangeString) => {
+    //data exception
+    if(!dateRangeString){
+        return undefined;    
+    }
+
     const date = new Date();
     date.setHours(date.getHours() + 9);
 

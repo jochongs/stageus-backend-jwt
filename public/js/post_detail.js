@@ -8,17 +8,14 @@ window.onload = ()=>{
 const requestPostData = async (postIdx)=>{
     //request post data
     const response = await fetch(`/post/${postIdx}`);
-    const result = await response.json();
 
     //request user data
     const response2 = await fetch('/session');
     const result2 = await response2.json();
+    const userData = result2.data;
 
-    if(result.success){
-        if(result.data.length === 0){
-            location.href = '/page/error404';
-            return 0;
-        }
+    if(response.status === 200){
+        const result = await response.json();
         const data = result.data;
 
         const postAuthor = data.post_author.trim();
@@ -43,28 +40,30 @@ const requestPostData = async (postIdx)=>{
             document.querySelector('.contents_container').append(img);
         })
 
-        if(result2?.id === postAuthor || result2.authority === 'admin'){
+        if(userData?.id === postAuthor || userData.authority === 'admin'){
             document.querySelector('.post_detail_btn_container').classList.remove('hidden');
         }
-    }else if(result.code === 404){
+    }else if(response.status === 404){
         location.href = '/page/error404'; 
-    }else{
-        location.href = '/page/error';
+    }else if(response.status === 409){
+        alert('예상하지 못한 에러가 발생했습니다.');
     }
 }
 
 const requestCommentData = async (postIdx)=>{
     //request comment data
     const response = await fetch(`/comment?postIdx=${postIdx}`);
-    const result = await response.json();
 
-    if(result.success){
+    if(response.status === 200){
+        const result = await response.json();
+
         //prepare data
         const commentDataArray = result.data;
 
         //request user data
         const response2 = await fetch('/session');
         const result2 = await response2.json();
+        const userData = result2.data;
 
         commentDataArray.forEach((commentData, index) => {
             const author = commentData.nickname;
@@ -102,7 +101,8 @@ const requestCommentData = async (postIdx)=>{
             commentItem.append(commentAuthorDateContainer);
 
 
-            if(result2?.id === commentAuthor || result2.authority === 'admin'){
+            console.log(userData, commentAuthor);
+            if(userData.id === commentAuthor || userData.authority === 'admin'){
                 //삭제 버튼 div
                 const deleteBtn = document.createElement('button');
                 deleteBtn.innerHTML = '삭제';
@@ -123,17 +123,19 @@ const requestCommentData = async (postIdx)=>{
 
             document.querySelector('.comment_container').append(commentItem);
         })
-    }else{
-        location.href = '/page/error';
+    }else if(response.code === 409){
+        alert('에상하지 못한 에러가 발생했습니다.');
+        location.reload();
     }
 }
 
+//로그인 상태 확인 함수
 const checkLoginState = async () => {
     //request login state
     const response = await fetch('/session');
-    const result = await response.json();
 
-    if(result.success){ //로그인이 되어있으면
+    if(response.status === 200){ //로그인이 되어있으면
+        const result = await response.json();
         document.querySelector('.comment_container .input_container').classList.remove('hidden');
 
         //로그인 버튼 생성
@@ -147,7 +149,7 @@ const checkLoginState = async () => {
         userInfoBtn.classList.remove('hidden');
         const img = userInfoBtn.querySelector('img');
         img.classList.remove('hidden');
-        userInfoBtn.innerText = result.id;
+        userInfoBtn.innerText = result.data.id;
         userInfoBtn.append(img);
     }else{ //로그인이 되어있지 않으면
         document.querySelector('.comment_container .input_container').classList.add('hidden');
@@ -164,6 +166,7 @@ const checkLoginState = async () => {
     }
 }
 
+//댓글 추가 버튼 클릭 이벤트
 const clickCommentSubmitBtnEvent = async ()=>{
     //prepare data
     const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];
@@ -179,22 +182,20 @@ const clickCommentSubmitBtnEvent = async ()=>{
             contents : comment,
         })
     })
-    const result = await response.json();
-
-    console.log(result);
-
-    //check reuslt
-    if(result.success){
+    
+    if(response.status === 200){
         location.reload();
-    }else if(result.code === 500){
-        location.href = '/page/error';
-    }else if(!result.auth){
+    }else if(response.status == 409){
+        alert('예상하지 못한 에러가 발생했습니다.');
+    }else if(response.status === 401){
+        location.href = '/page/login';
+    }else if(response.status === 403){
         alert('권한이 없습니다.');
-        localStorage.removeItem('token');
         location.reload();
     }
 }
 
+//댓글 삭제 버튼 클릭 이벤트
 const clickDeleteCommentBtnEvent = async (e)=>{
     //prepare data
     const commentIdx = e.target.dataset.commentIdx;
@@ -206,20 +207,20 @@ const clickDeleteCommentBtnEvent = async (e)=>{
             "Content-Type" : "application/json",
         }
     })
-    const result = await response.json();
-
-    //check result
-    if(result.success){
+    
+    if(response.status === 200){
         location.reload();
-    }else if(result.code === 500){
-        location.href = '/page/error';
-    }else if(!result.auth){
+    }else if(response.status == 409){
+        alert('예상하지 못한 에러가 발생했습니다.');
+    }else if(response.status === 401){
+        location.href = '/page/login';
+    }else if(response.status === 403){
         alert('권한이 없습니다.');
-        localStorage.removeItem('token');
         location.reload();
     }
 }
 
+//댓글 수정 버튼 클릭 이벤트
 const clickModifyCommentBtnEvent = (e)=>{
     const commentItem = e.target.parentElement.parentElement;
     const commentContents = commentItem.querySelector('.comment_contents').innerText;
@@ -247,15 +248,15 @@ const clickModifyCommentBtnEvent = (e)=>{
                 contents : contents,
             })
         })
-        const result = await response.json();   
         
-        if(result.success){
+        if(response.status === 200){
             location.reload();
-        }else if(result.code === 500){
-            location.href = '/page/error';
-        }else if(!result.auth){
+        }else if(response.status == 409){
+            alert('예상하지 못한 에러가 발생했습니다.');
+        }else if(response.status === 401){
+            location.href = '/page/login';
+        }else if(response.status === 403){
             alert('권한이 없습니다.');
-            localStorage.removeItem('token');
             location.reload();
         }
     })
@@ -266,26 +267,26 @@ const clickModifyCommentBtnEvent = (e)=>{
     commentItem.append(submitBtn);
 }
 
+//게시글 삭제하는 함수
 const clickDeletePostBtnEvent = async ()=>{
-    //prepare data
+    //prepare
     const postIdx = location.pathname.split('/')[location.pathname.split('/').length-1];
 
-    //request delete post data
     const response = await  fetch(`/post/${postIdx}`,{
         "method" : "DELETE",
         "headers" : {
             "Content-Type" : "application/json"
         },
     })
-    const result = await response.json();
 
-    //check result
-    if(result.success){
+    if(response.status === 200){
         location.href = '/';
-    }else if(result.code === 500){
-        location.href = '/page/error';
-    }else if(!result.auth){
-        alert('권한이 없습니다.');
+    }else if(response.status === 401){
+        location.href = '/page/login';
+    }else if(response.status === 403){
+        alert('삭제 권한이 없습니다.');
+    }else if(response.status === 409){
+        alert('예상하지 못한 에러가 발생했습니다.');
         location.reload();
     }
 }
@@ -330,16 +331,15 @@ const clickModifyPostBtnEvent = ()=>{
                 contents : contentsValue,
             })
         })
-        const result = await response.json();
-        console.log(result);
-
-        //check result
-        if(result.success){
+        
+        if(response.status === 200){
             location.reload();
-        }else if(result.code === 500){
-            location.href = "/page/error";
-        }else if(!result.auth){
-            alert('권한이 없습니다.');
+        }else if(response.status === 401){
+            location.href = '/page/login';
+        }else if(response.status === 403){
+            alert('수정 권한이 없습니다.');
+        }else if(response.status === 409){
+            alert('예상하지 못한 에러가 발생했습니다.');
             location.reload();
         }
     })

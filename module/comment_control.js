@@ -12,11 +12,14 @@ const commentGet = (postIdx, searchFor = 'post_idx') => {
             });
 
             //check index
-            const checkResult = await esClient.indices.exists({
+            const checkCommentIndex = await esClient.indices.exists({
                 index : 'comment'
             })
-            if(!checkResult){
-                resolve([])
+            if(!checkCommentIndex){
+                reject({
+                    message : 'data not found',
+                    code : 404
+                })
             }
 
             //get comment
@@ -25,7 +28,7 @@ const commentGet = (postIdx, searchFor = 'post_idx') => {
                 body : {
                     query : {
                         match : {
-                            [searchFor] : postIdx
+                            _routing : postIdx
                         }
                     },
                     sort : [{
@@ -36,21 +39,14 @@ const commentGet = (postIdx, searchFor = 'post_idx') => {
 
             //get comment
             const commentData = searchResult.hits.hits.map((hits) => hits._source);
-            const getResult = await esClient.search({
-                index : 'comment',
-                body : {
-                    query : {
-                        match : {
-                            _routing : postIdx
-                        }
-                    }
-                }
-            })
-            console.log(getResult.hits.hits);
             
             resolve(commentData);
         }catch(err){
-            reject(err);
+            reject({
+                err : err,
+                message : 'unexpected error occured',
+                code : 409
+            });
         }
     })
 }
@@ -101,14 +97,16 @@ const commentAdd = (commentData) => {
             //COMMIT
             await pgClient.query('COMMIT');
 
-            //resolve
             resolve(1);
         }catch(err){
             //ROLLBACK
             await pgClient.query('ROLLBACK');
             
-            //reject
-            reject(err);
+            reject({
+                err : err,
+                message : 'unexpected error occured',
+                code : 409
+            });
         }
     })
 }
@@ -162,19 +160,21 @@ const commentModify = (commentIdx, userData, commentData) => {
                 //COMMIT
                 await pgClient.query('COMMIT');
 
-                //resolve
                 resolve(1);
             }else{
-                reject({ auth : false });
+                reject({
+                    message : 'no auth',
+                    code : 403
+                });
             }
         }catch(err){
             //ROLLBACK
             pgClient.query('ROLLBACK');
 
-            //reject
             reject({
                 err : err,
-                auth : true
+                message : 'unexpected error occured',
+                code : 409
             });
         }
     })
@@ -219,21 +219,21 @@ const commentDelete = (commentIdx, userData) => {
                 //COMMIT
                 await pgClient.query('COMMIT');
 
-                //resolve
                 resolve(1);
             }else{
-                //ROLLBACK
-                await pgClient.query('ROLLBACK');
-                //reject
                 reject({
-                    auth : false
+                    message : 'no auth',
+                    code : 403
                 })
             }
         }catch(err){
-            //reject
+            //ROLLBACK
+            await pgClient.query('ROLLBACK');
+
             reject({
                 err : err,
-                auth : true
+                message : 'unexpected error occured',
+                code : 409
             })
         }
     })
@@ -253,7 +253,10 @@ const commentSearch = (keyword, option = { search : 'post_contents', size : 30, 
                 index : 'comment',
             });
             if(!exitsResult || keyword === ""){
-                resolve([])
+                reject({
+                    message : 'keyword is required',
+                    code : 400
+                })
             }
 
             //search
@@ -285,13 +288,14 @@ const commentSearch = (keyword, option = { search : 'post_contents', size : 30, 
                     }]
                 }
             })
-            console.log(searchResult);
 
-            //resolve
             resolve(searchResult.hits.total.value !== 0 ? searchResult.hits.hits.map(hits => hits._source) : []);
         }catch(err){
-            //reject
-            reject(err);
+            reject({
+                err : err,
+                message : 'unexpected error occured',
+                code : 409
+            });
         }
     })  
 }
@@ -308,11 +312,13 @@ const commentSearchPsql = (keyword, option = { search : 'post_title', size : 30,
             const selectSql = 'SELECT post_idx, comment_contents, nickname, comment_date FROM backend.comment JOIN backend.account ON comment_author = id WHERE comment_contents LIKE $1 OFFSET $2 LIMIT $3';
             const selectResult = await pgClient.query(selectSql, [`%${keyword}%`, option.from, option.size]);
 
-            //resolve
             resolve(selectResult.rows);
         }catch(err){
-            //reject
-            reject(err);
+            reject({
+                err : err,
+                message : 'unexpected error occured',
+                code : 409
+            });
         }
     });
 }

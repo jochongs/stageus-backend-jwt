@@ -25,22 +25,17 @@ const clickWriteBtnEvent = async ()=>{
             },
             "body" : formData,
         })
-        const result = await response.json();
 
         document.querySelector('.post_submit_btn').disabled = false;
 
-        //check result
-        if(result.success){
+        if(response.status === 200){
             location.reload();
-        }else if(result.code === 500){
-            location.href = "/page/error";
-        }else if(!result.auth){
-            alert('권한이 없습니다.');
-            location.reload();
-        }else if(result.code === 501){
-            alert('이미지 파일을 다시 한번 확인해주세요 이미지 파일은 1mb용량을 넘을 수 없습니다.');
-        }else{
-            alert(result.errorMessage[0].message);
+        }else if(response.status === 401){
+            location.href = '/page/login';
+        }else if(response.status === 409){
+            alert('예상하지 못한 에러가 발생했습니다.');
+        }else if(400){
+            alert('제목과 내용의 길이를 확인해주세요. 제목은 32글자를 넘을 수 없고 제목과 내용은 빈칸 일 수 없습니다. 이미지 파일 용량은 1mb를 넘을 수 없습니다.');
         }
     }
 }

@@ -53,8 +53,9 @@ const postSearch = (keyword = "", option = { search : 'post_title', size : 30, f
             resolve(searchResult.hits.total.value !== 0 ? searchResult.hits.hits.map(data => data._source) : []);
         }catch(err){
             reject({
+                code : 409,
                 err : err,
-                message : "es 에러 발생"
+                message : "unexpected error occured"
             });
         }
     })
@@ -89,12 +90,18 @@ const getPostOne = (postIdx) => {
 
             //404 check
             if(searchResult.hits.total.value === 0){
-                resolve(404);
+                reject({
+                    code : 404,
+                    message : "Data Not Found"
+                });
             }else{
                 resolve(searchResult.hits.hits[0]?._source);
             }
         }catch(err){
-            reject(err);
+            reject({
+                code : 409,
+                message : err?.message || "elasticsearch error"
+            });
         }
     })
 }
@@ -130,19 +137,23 @@ const postSearchPsql = (keyword = "", option = { search : 'post_title', size : 3
                         $3
                     `;
 
-
-        //connect psql
         const client = new Client(pgConfig);
         try{
+            //connect psql
             await client.connect();
 
             //SELECT post data
             const selectData = await client.query(sql, [ `%${keyword}%`, option.from, option.size]);
+            
             resolve(selectData.rows);
         }catch(err){
             console.log(err);
             
-            reject(err);
+            reject({
+                err : err,
+                message : 'unexpected error occured',
+                code : 409
+            });
         }
     })
 }
@@ -191,7 +202,8 @@ const postGetAll = (option = { from : 0, size : 30}) => {
             //reject
             reject({
                 err : err,
-                message : 'ES에러 발생'
+                message : 'unexpected error occured',
+                code : 409
             })
         }
     })
@@ -265,7 +277,8 @@ const postAdd = (postData) => {
             //reject
             reject({
                 err : err,
-                message : err.message
+                message : 'unexpected error occured',
+                code : 409
             });
         }
     })
@@ -327,24 +340,22 @@ const postModify = (postIdx, requestUserData, postData) => {
                         }
                     }
                 })
-
-                //resolve
-                resolve(1);
-
+                
+                //COMMIT
                 await pgClient.query('COMMIT');
+
+                resolve(1);
             }else{
-                //reject
                 reject({
-                    auth : false,
-                    message : "권한이 없습니다."
+                    code : 403,
+                    message : 'no auth'
                 });
             }
         }catch(err){
-            //reject
             reject({
                 err : err,
-                auth : true,
-                message : err.message
+                code : 409,
+                message : 'unexpected error occured'
             });
         }
     })
@@ -402,7 +413,7 @@ const postDelete = (postIdx, requestUserData) => {
                 }
 
                 //DELETE post data on elasticsearch
-                const delPostResult = await esClient.deleteByQuery({
+                await esClient.deleteByQuery({
                     index : 'post',
                     body : {
                         query : {
@@ -413,8 +424,8 @@ const postDelete = (postIdx, requestUserData) => {
                     }
                 });
 
-                //DELETE comment data on elasticsearch ( 테스트가 필요합니다. )
-                const delCommentResult = await esClient.deleteByQuery({
+                //DELETE comment data on elasticsearch
+                await esClient.deleteByQuery({
                     index : 'comment',
                     body : {
                         query : {
@@ -424,7 +435,6 @@ const postDelete = (postIdx, requestUserData) => {
                         }
                     }
                 })
-                console.log(delCommentResult);
 
                 //COMMIT
                 await pgClient.query('COMMIT');
@@ -433,8 +443,8 @@ const postDelete = (postIdx, requestUserData) => {
                 resolve(1);
             }else{
                 reject({
-                    message : "권한이 없습니다.",
-                    auth : false
+                    code : 403,
+                    message : 'no auth'
                 })
             }
         }catch(err){
@@ -444,8 +454,8 @@ const postDelete = (postIdx, requestUserData) => {
             //reject
             reject({
                 err : err,
-                message : "DB에러가 발생했습니다.",
-                auth : true
+                message : "unexpected error occured",
+                code : 409
             })
         }
     })

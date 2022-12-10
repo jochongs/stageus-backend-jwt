@@ -13,12 +13,14 @@ window.onload = async ()=>{
 const checkLoginState = async () => {
     //request userData
     const response = await fetch(`/session`);
-    const result = await response.json();
     
     //check result
-    if(result.success){ 
+    if(response.status === 200){
+        const result = await response.json();
+        const userData = result.data;
+
         //알림 확인 기능
-        checkNotification(result.id);
+        checkNotification(userData.id);
 
         //로그인 버튼 생성
         document.querySelector('.nav_login_btn').classList.add('hidden');
@@ -34,7 +36,7 @@ const checkLoginState = async () => {
         userInfoBtn.classList.remove('hidden');
         const img = userInfoBtn.querySelector('img');
         img.classList.remove('hidden');
-        userInfoBtn.innerText = result.id;
+        userInfoBtn.innerText = userData.id;
         userInfoBtn.append(img);
 
         //글쓰기 section생성
@@ -60,12 +62,11 @@ const getPostData = async (from = 0)=>{
     return new Promise(async (resolve, reject) => {
         //request post data
         const response = await fetch(`/post/all?from=${from}`);
-        const result = await response.json();
-
-        if(result.success){ //성공하면
+        if(response.ok){
+            const result = await response.json();
             resolve(result.data);
-        }else if(result.code === 500){ //데이터베이스 에러 발생시
-            reject([]);
+        }else{
+            resolve([]);
         }
     })
 }
@@ -260,9 +261,12 @@ const addCurSearchKeyword = (keywordList) => {
 
             //request search post
             const response = await fetch(`/post?keyword=${keyword}`);
-            const result = await response.json();
-
-            addPostItem(result.data);
+            if(response.status === 200){
+                const result = await response.json();
+                addPostItem(result.data);
+            }else{
+                alert('데이터를 가져오는데 에러가 발생했습니다.');
+            }
         })
 
         //cur_search_container
@@ -342,7 +346,7 @@ const getSearchPostData = async (keyword, option = { size : 30, from : 0 }) => {
             }catch(err){
                 console.log(err);
 
-                reject([]);
+                resolve([]);
             }
         }
     })
@@ -453,5 +457,14 @@ const clickPagenationNextBtnEvent = async () => {
 
         //set pagenatio number
         setPagenationNumber(pageNationNumber + 1);
+    }
+}
+
+//psql 셀렉트 onchange 이벤트
+const changeDbSelectEvent = () => {
+    const selectDb = document.getElementById('db-select').value;
+    
+    if(selectDb === 'postgre'){
+        alert('Postgre SQL로 검색할 경우 날짜 범위를 선택할 수 없습니다.');
     }
 }

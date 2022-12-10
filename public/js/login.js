@@ -28,17 +28,21 @@ const loginEvent = async ()=>{
             "pw" : pwValue,
         })
     })
-    const result = await response.json();
 
     //check result
-    if(result.success){
+    if(response.status === 200){
         location.href = document.referrer;
-    }else if(result.loginType !== undefined){
-        alert(`${result.loginType}으로 로그인 해주세요`);
-    }else if(result.code === 500){
-        location.href = '/page/error';
-    }else{
-        errorDiv.innerHTML = `*아이디또는 비밀번호가 잘못되었습니다.`;
+    }else if(response.status === 400){
+        const result = await response.json();
+
+        if(result.type){
+            alert(`${result.type}으로 로그인해주세요`);
+            location.reload();
+        }else{
+            errorDiv.innerHTML = `*아이디또는 비밀번호가 잘못되었습니다.`;  
+        }
+    }else if(response.status === 409){
+        alert('예상하지 못한 에러가 발생했습니다.');
     }
 }
 

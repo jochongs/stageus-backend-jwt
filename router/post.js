@@ -10,81 +10,64 @@ const SECRET_KEY = require('../config/jwt_secret_key');
 const { postAdd, postModify, postDelete, postGetAll, postSearch, getPostOne, postSearchPsql } = require('../module/post_control');
 const getDateRange = require('../module/get_date_range');
 
-//게시글 받아오기 api
+//게시글 모두 가져오기 api
 router.get('/all', async (req, res) => {
     //FE에서 받은 값
     const searchSize = req.query.size === undefined ? 30 : req.query.size;
     const searchFrom = req.query.from === undefined ? 0 : req.query.from;
 
     //FE로 보낼 값
-    const result ={
-        success : true,
-        code : 200
-    }
+    const result = {};
+    let statusCode = 200;
 
+    //게시글 가져오기
     try{
-        //get post data
         const postData = await postGetAll({ from : searchFrom, size : searchSize });
-
-        //set result
         result.data = postData.data;
     }catch(err){
         console.log(err);
         
-        //set result
-        result.success = false;
-        result.code = 500;
+        statusCode = err.code;
+        result.message = err.message;
     }
     
     //send result
-    res.send(result);
+    res.status(statusCode).send(result);
 })
 
-//게시글 가져오기 API
+//게시글 한개 가져오기 API
 router.get('/:postIdx', async (req, res) => {
-    //FE에서 받은 값 준비
+    //FE에서 받은 값
     const postIdx = req.params.postIdx;
     
     //FE로 보낼 값
-    const result = {
-        success : true,
-        code : 200
-    }
+    const result = {}
+    let statusCode = 200;
 
+    //데이터 가져오기
     try{
-        //get one
         const postData = await getPostOne(postIdx);
-
-        if(postData === 404){
-            //set result ( 404 )
-            result.success = false;
-            result.code = 404;
-        }else{
-            //send result ( success )
-            result.data = postData;
-        }
+        result.data = postData;
     }catch(err){
-        console.log(err);
-
-        //set result ( error )
-        result.success = false;
-        result.code = 500;
+        statusCode = err.code;
+        result.message = err.code === 404 ? "data not found" :'unexpected error occured';
     }
 
-    //send result
-    res.send(result);
+    //응답
+    res.status(statusCode).send(result);
 })
 
 //게시글 검색 API
 router.get('/', async (req, res) => {
-    //prepare data
-    const searchKeyword = req.query.keyword;
-    const searchSize = req.query.size === undefined ? 30 : req.query.size;
-    const searchFrom = req.query.from === undefined ? 0 : req.query.from;
-    const searchDB = req.query.db === undefined ? 'elasticsearch' : req.query.db;
-    const searchDateRange = req.query['date-range'] === undefined ? 0 : getDateRange(req.query['date-range']);
-    const searchType = req.query['search-type'] === undefined ? 'post_title' : req.query['search-type'];
+    //FE에서 받은 값
+    const searchKeyword = req.query?.keyword;
+    const searchSize = req.query?.size || 30;
+    const searchFrom = req.query.from || 0;
+    const searchDB = req.query.db || 'elasticsearch';
+    const searchDateRange = getDateRange(req.query['date-range']) || 0;
+    const searchType = req.query['search-type'] || 'post_title';
 
+    //검색 옵션 준비
     const searchOption = {
         search : searchType,
         size : searchSize,
@@ -93,52 +76,38 @@ router.get('/', async (req, res) => {
     }
 
     //FE로 보낼 값
-    const result = {
-        success : true,
-        code : 200,
-        auth : true,
-        data : []
-    }
+    const result = {};
+    let statusCode = 200;
 
-    //data check
-    if(searchKeyword === undefined){
-        //send result
-        res.send(result);
+    //예외 처리
+    if(!searchKeyword){
+        statusCode = 400;
+        res.status(400).send(result);
         return;
     }
 
-    //add keyword
-    let userData = null;
+    //검색 키워드 저장
     try{
-        userData = req.signedCookies.token !== undefined ? jwt.verify(req.signedCookies.token, SECRET_KEY) : null;
-    }catch{
-        userData = null;
-    }
-    if(userData !== null){
-        searchKeywordSave(searchKeyword, userData.id);
-    }
+        searchKeywordSave(searchKeyword, jwt.verify(req.signedCookies.token, SECRET_KEY).id || "");
+    }catch{}
 
+    //검색 데이터 가져오기
     try{ 
         if(searchDB === 'elasticsearch'){
-            //search post data
             const searchResult = await postSearch(searchKeyword, searchOption);
             result.data = searchResult;  
-        }else if(searchDB === 'postgre'){
-            //search post data (psql)
+        }else if(searchDB === 'postgre'){ 
             const searchResult = await postSearchPsql(searchKeyword, searchOption);
             result.data = searchResult;
         }
-        //send result
-        res.send(result);
     }catch(err){
         console.log(err);
 
-        //send result
-        result.success = false;
-        result.code = 500;
-        delete result.data;
-        res.send(result);
+        statusCode = err.code;
     }
+    
+    //응답
+    res.status(statusCode).send(result);
 })
 
 //게시글 쓰기 api
@@ -153,44 +122,41 @@ router.post('/', loginAuth, postImgUploadMiddleware, async (req,res)=>{
 
     //FE로 보내줄 값
     const result = {
-        success : true,
-        code : 200,
-        auth : true,
         errorMessage : []
     }
+    let statusCode = 200;
 
-    //body data의 입력 길이 검사
+    //data예외처리
     if(postData.title.length === 0 || postData.title.length > 32){
-        result.success = false;   
+        statusCode = 400;
         result.errorMessage.push({
             class : 'title',
             message : "제목의 길이는 1~32자여야 합니다."
         });
     }
     if(postData.contents.length === 0){
-        result.success = false;   
+        statusCode = 400;
         result.errorMessage.push({
             class : 'contents',
             message : "글의 내용은 필수 사항입니다."
         });
     }
 
-    //Check data exception
-    if(result.success){
+    //게시글 데이터 추가하기
+    if(statusCode === 200){
         delete result.errorMessage;
-
-        //ADD post data
         try{
             await postAdd(postData);
         }catch(err){
             console.log(err);
 
-            //set result
-            result.success = false;
-            result.code = 500;
+            statusCode = err.code;
+            result.message = err.message;
         }
     }
-    res.send(result);
+
+    //응답
+    res.status(statusCode).send(result);
 });
 
 //게시글 수정
@@ -204,48 +170,41 @@ router.put('/:postIdx', loginAuth, async (req, res) => {
 
     //FE로 보내줄 데이터
     const result = {
-        success : true,
-        errorMessage : [],
-        auth : true,
-        code : 200
+        errorMessage : []
     }
+    let statusCode = 200;
 
-    //데이터 검증
+    //데이터 예외처리
     if(postData.title.length === 0 || postData.title.length > 32){
-        result.success = false;
+        statusCode = 400;
         result.errorMessage.push({
             class : "title",
             message : "제목은 0~32자여야 합니다."
         })
     }
     if(postData.contents.length === 0){
-        result.success = false;
+        statusCode = 400;
         result.errorMessage.push({
             class : "contents",
             message : "내용을 입력해야합니다."
         })
     }
 
-    //check data exception
-    if(result.success){
+    //게시글 수정하기
+    if(statusCode === 200){
         delete result.errorMessage;
-        
-        //MODIFY post
         try{
             await postModify(postIdx, req.userData, postData);
         }catch(err){
             console.log(err);
 
-            //set result
-            result.success = false;
-            result.auth = err.auth;
+            statusCode = err.code;
             result.message = err.message;
         }
-    }else{
-        //set result (data exception)
-        result.success = false;
     }
-    res.send(result);
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 //post삭제 api
@@ -254,24 +213,21 @@ router.delete('/:postIdx',loginAuth, async (req,res)=>{
     const postIdx = req.params.postIdx;
 
     //FE로 보내줄 데이터
-    const result = {
-        success : true,
-        auth : true,
-        code : 200
-    }
+    const result = {};
+    let statusCode = 200;
 
-    //DELETE post
+    //게시글 삭제하기
     try{
         await postDelete(postIdx, req.userData);
     }catch(err){
         console.log(err);
 
-        //send result
-        result.success = false;
-        result.auth = err.auth;
-        result.code = err.auth ? 500 : 200
+        result.message = err.message;
+        statusCode = err.code;
     }
-    res.send(result);
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 module.exports = router;

@@ -6,19 +6,21 @@ module.exports = (req, res, next) => {
     const token = req.signedCookies.token;
 
     //FE로 보내줄 값
-    const result = {
-        success : false,
-        auth : false,
-        code : 200
-    }
+    const result = {};
 
+    //토큰 확인하기
     try{    
-        //check token
-        req.userData = jwt.verify(token, SECRET_KEY);
+        if(token){
+            req.userData = jwt.verify(token, SECRET_KEY);
+        }else{
+            throw {
+                message : "token expired"
+            }
+        }
 
         next();
     }catch(err){
-        //send result
-        res.send(result);
+        result.message = err.message;
+        res.status(401).send(result);
     }
 }

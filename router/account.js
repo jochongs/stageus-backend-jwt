@@ -5,10 +5,10 @@ const pgConfig = require('../config/pg_config');
 const loginAuthCheck = require('../module/login_auth_check');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
-const { accountGet, accountModify } = require('../module/account_control');
+const { accountGet, accountModify, accountAdd } = require('../module/account_control');
 
 //api ===============================================================================
-//모든 계정 데이터를 가져오는 API (테스트가 필요합니다.)
+//모든 계정 데이터를 가져오는 API (사용하지 않음)
 router.get('/all', async (req, res) => {
     //FE로 받은 데이터
     const token = req.signedCookies.token;
@@ -71,54 +71,43 @@ router.get('/:userId', loginAuthCheck, async (req, res) => {
     //FE로 부터 받을  값
     const userId = req.params.userId;
     const userData = req.userData;
+    console.log(userId);
 
     //FE로 보내줄 값
-    const result = {
-        success : true,
-        auth : true,
-        code : 200
-    }
+    const result = {};
+    let statusCode = 200;
 
-    //auth check
+    //계정 데이터 가져오기
     try{
-        if(userData.id === userId || userData.authority === 'admin'){
-            //get user data
-            const getUserData = await accountGet(userId);
-
-            //set result
-            result.data = getUserData;
-        }else{
-            //set result ( no auth )
-            result.success = false;
-            result.code = 401;
-            result.auth = false;
-        }
+        const getUserData = await accountGet(userId, userData);
+        result.data = getUserData;
     }catch(err){
         console.log(err);
 
-        //send result
-        result.success = false;
-        result.code = 500;
+        result.message = err.message;
+        statusCode = err.code;
     }
-    res.send(result);
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 //회원정보 시도 api (회원가입 api)
 router.post('/', async (req, res) => { 
     //FE에서 데이터 받기
-    const idValue = req.body.id;
-    const pwValue = req.body.pw;
-    const pwCheckValue = req.body.pwCheck;
-    const nameValue = req.body.name;
-    const nicknameValue = req.body.nickname;
+    const accountData = {
+        id : req.body.id,
+        pw : req.body.pw,
+        pwCheck : req.body.pwCheck,
+        name : req.body.name,
+        nickname : req.body.nickname
+    }
 
     //FE로 보내줄 데이터
     const result = {
-        success : true,
-        errorMessage : [],
-        auth : true,
-        code : 500
+        errorMessage : []
     }
+    let statusCode = 200;
 
     //에러메세지 목록
     const errorMessage = {
@@ -139,87 +128,64 @@ router.post('/', async (req, res) => {
         }
     }
 
-    //exception
+    //데이터 예외처리
     if(!testRegExp(idValue, 'id')){ //id RegExp error 
-        const tempObj = {
+        statusCode = 400;
+        result.errorMessage.push({
             class : "id",
             message : errorMessage.id.regError
-        }
-        result.success = false; 
-        result.errorMessage.push(tempObj);
+        });
     }
     if(!testRegExp(pwValue, 'pw')){ //pw RegExp error
-        const tempObj = {
+        statusCode = 400;
+        result.errorMessage.push({
             class : "pw",
             message : errorMessage.pw.regError
-        }
-        result.success = false;
-        result.errorMessage.push(tempObj);
+        });
     }
     if(pwCheckValue !== pwValue){ //if pwCheckValue is different from pw
-        const tempObj = {
+        statusCode = 400;
+        result.errorMessage.push({
             class : "pw_check",
             message : errorMessage.pwCheck.difPwError
-        }
-        result.success = false;
-        result.errorMessage.push(tempObj);
+        });
     }
     if(!testRegExp(nameValue, 'name')){ //name RegExp error
-        const tempObj = {
+        statusCode = 400;
+        result.errorMessage.push({
             class : "name",
             message : errorMessage.name.regError
-        }
-        result.success = false;
-        result.errorMessage.push(tempObj);
+        });
     }
     if(!testRegExp(nicknameValue, 'nickname')){ //nickname RegExp error
-        const tempObj = {
+        statusCode = 400;
+        result.errorMessage.push({
             class : "nickname",
             message : errorMessage.nickname.regError
-        }
-        result.success = false;
-        result.errorMessage.push(tempObj);
+        });
     }
     
-    //예외처리 통과
-    if(result.success){ //예외 상황이 발생하지 않을 시
-        //DB 연결
-        const client = new Client(pgConfig);
+    //회원가입 시도
+    if(statusCode === 200){ 
+        delete result.errorMessage;
         try{
-            await client.connect();
-
-            //INSERT
-            const sql = `INSERT INTO backend.account VALUES ($1,$2,$3,$4)`;
-            await client.query(sql,[idValue,pwValue,nameValue,nicknameValue]);
-            
-            //send result
-            result.success = true;
-            result.auth = true;
-            result.code = 200;
-            delete result.errorMessage;
-            res.send(result);
+            await accountAdd(accountData);
         }catch(err){
-            //아이디 중복
-            if(err.code === '23505'){
-                result.state = false;
-                const tempObj = {
-                    class : "id",
-                    message : "이미 있는 아이디입니다."
-                }
-                result.errorMessage.push(tempObj);
+            if(err.code === 400){
+                result.errorMessage.push({
+                    class : 'id',
+                    message : '이미 있는 아이디입니다.'
+                })
+                statusCode = 400;
             }else{
-                console.log(err);
+                result.message = err.message;
+                statusCode = err.code;
             }
-
-            //send result
-            result.success = false;
-            result.auth = true;
-            result.code = 500;
-            res.send(result);
         }
-    }else{ //예외 상황 발생 시
-        res.send(result);
     }
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 router.put('/:userId', loginAuthCheck, async (req, res) => {
@@ -231,30 +197,29 @@ router.put('/:userId', loginAuthCheck, async (req, res) => {
 
     //FE로 보내줄 값    
     const result = {
-        success : true,
-        errorMessage : [],
-        auth : true,
-        code : 200,
+        errorMessage : []
     }
+    let statusCode = 200;
 
-    //Input 예외처리
+    //데이터 예외처리
     if(!testRegExp(nameValue,'name')){
-        result.success = false;
+        statusCode = 400;
         result.errorMessage.push({
             class : "name",
             message : "이름 형식이 맞지 않습니다."
         })
     }
     if(!testRegExp(nicknameValue,'nickname')){
-        result.success = false;
+        statusCode = 400;
         result.errorMessage.push({
             class : "nickname",
             message : "닉네임 형식이 맞지 않습니다."
         })
     }
-    if(result.success){
-        delete result.errorMessage;
 
+    //회원 수정
+    if(statusCode === 200){
+        delete result.errorMessage;
         try{
             if(userData.id === userId || userData.authority === 'admin'){
                 //modify
@@ -266,14 +231,13 @@ router.put('/:userId', loginAuthCheck, async (req, res) => {
                 result.code = 401;
             }
         }catch(err){
-            console.log(err);
-
-            //set result ( server error )
-            result.success = false;
-            result.code = 500;
+            statusCode = err.code;
+            result.message = err.message;
         }
     }
-    res.send(result);
+    
+    //응답
+    res.status(statusCode).send(result);
 })
 
 module.exports = router;

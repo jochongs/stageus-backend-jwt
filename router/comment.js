@@ -10,14 +10,15 @@ const getDateRange = require('../module/get_date_range');
 //댓글의 db데이터를 가져오는 api
 router.get('/', async (req, res) => {
     //FE로 받을 데이터
-    const postIdx = req.query.postIdx;
-    const searchKeyword = req.query.keyword === undefined ? "" : req.query.keyword;
-    const searchSize = req.query.size === undefined ? 30 : req.query.size;
-    const searchFrom = req.query.from === undefined ? 0 : req.query.from;
-    const searchDB = req.query.db === undefined ? 'elasticsearch' : req.query.db;
-    const searchDateRange = req.query['date-range'] === undefined ? 0 : getDateRange(req.query['date-range']);
-    const searchType = req.query['search-type'] === undefined ? 'post_title' : req.query['search-type'];
+    const postIdx = req.query?.postIdx;
+    const searchKeyword = req.query?.keyword || "";
+    const searchSize = req.query.size || 30;
+    const searchFrom = req.query.from || 0;
+    const searchDB = req.query.db || 'elasticsearch';
+    const searchDateRange = getDateRange(req.query['date-range']) || 0;
+    const searchType = req.query['search-type'] || "post_title";
 
+    //옵션 셋팅
     const searchOption = {
         search : searchType,
         size : searchSize,
@@ -26,42 +27,30 @@ router.get('/', async (req, res) => {
     }
 
     //FE로 보내줄 데이터
-    const result = {
-        success : true,
-        data : [],
-        auth : true,
-        code : 200
-    }
+    const result = {};
+    let statusCode = 200;
 
+    //댓글 가져오기
     try{
-        if(postIdx !== undefined){
-            //get commnet data on Elasticsearch
+        if(postIdx){ //get comment data with post idx
             const searchResult = await commentGet(postIdx);
-
-            //set result ( success )
             result.data = searchResult;
-            delete result.error;
-        }else{
-            if(searchDB === 'elasticsearch'){
-                //get search result from elasticsearch
-                const commentData = await commentSearch(searchKeyword, searchOption);
-                result.data = commentData;   
-            }else{
-                //get search result from psql 
-                const commentData = await commentSearchPsql(searchKeyword, searchOption);
-                console.log(commentData);
-                result.data = commentData;
-            }
+        }else if(searchDB === 'elasticsearch'){ //get search result from elasticsearch
+            const commentData = await commentSearch(searchKeyword, searchOption);
+            result.data = commentData;   
+        }else{ //get search result from psql 
+            const commentData = await commentSearchPsql(searchKeyword, searchOption);
+            result.data = commentData;
         }
     }catch(err){
         console.log(err);
 
-        //set result ( error )
-        result.success = false;
-        result.code = 500;
-        delete result.data;
+        result.message = err.message;
+        statusCode = err.code;
     }
-    res.send(result);
+
+    //응답
+    res.status(statusCode).send(result);
 });
 
 //comment에 데이터 삽입 api
@@ -75,48 +64,39 @@ router.post('/', loginAuthCheck, async (req, res) => {
     }
 
     //FE에 보낼 값
-    const result = {
-        success : true,
-        errorMessage : [],
-        auth : true,
-        code : 200
-    }
+    const result = {};
+    let statusCode = 200;
 
-    //check exception
+    //데이터 예외처리
     if(commentData.commentContents.length === 0){
-        result.state = false;
+        statusCode = 400;
         result.errorMessage = [{
             class : "contents",
             message : "내용을 입력해야합니다."
         }]
-        res.send(result);
-    }else{ 
+    }
+    
+    //댓글 추가하기
+    if(statusCode === 200){ 
         try{
-            //add comment data
             await commentAdd(commentData);
-
-            //add notification
-            addNotification([{
+            await addNotification([{
                 code : 1,
                 user : commentData.commentAuthor,
                 idx : commentData.postIdx,
                 contents : commentData.commentContents,
                 nickname : commentData.nickname
             }])
-
-            //send result
-            delete result.errorMessage;
-            res.send(result);
         }catch(err){
             console.log(err);
 
-            //send result
-            result.success = false;
-            result.code = 500;
-            delete result.errorMessage;
-            res.send(result);
+            statusCode = err.code;
+            result.message = err.message;
         }
     }
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 //comment 수정 api
@@ -128,51 +108,32 @@ router.put('/:commentIdx', loginAuthCheck, async (req, res) => {
     }
 
     //FE에 줄 데이터
-    const result = {
-        success : true,
-        errorMessage : [],
-        auth : true,
-        code : 200
-    }
+    const result = {};
+    let statusCode = 200;
 
-    //FE data check
+    //데이터 예외 처리
     if(commentData.contents.length === 0){
-        //send result
-        result.success = false;
-        result.errorMessage.push({
+        statusCode = 400;
+        result.errorMessage = [{
             class : "contents",
             message : "내용을 입력해야합니다."
-        })
+        }];
     }
 
-    if(result.success){
+    //댓글 수정하기
+    if(statusCode === 200){
         try{
-            //modify comment
             await commentModify(commentIdx, req.userData, commentData);
-
-            //set result
-            delete result.errorMessage;
         }catch(err){
             console.log(err);
             
-            if(err.auth){
-                //set result ( no auth )
-                delete result.errorMessage;
-                result.success = false;
-                result.auth = true;
-                result.code = 401;
-            }else if(err.err.status !== 404){
-                //set result ( server error )
-                delete result.errorMessage;
-                result.success = false;
-                result.auth = true;
-                result.code = 500;
-            }
+            result.message = err.message;
+            statusCode = err.code;
         }
     }
 
-    //send result
-    res.send(result);
+    //응답
+    res.status(statusCode).send(result);
 })
 
 
@@ -182,31 +143,21 @@ router.delete('/:commentIdx', loginAuthCheck, async (req, res) => {
     const commentIdx = req.params.commentIdx;
 
     //FE로 보내줄 데이터
-    const result = {
-        success : true,
-        code : 200,
-        auth : true
-    }
+    const result = {};
+    let statusCode = 200;
 
+    //데이터 삭제하기
     try{
-        //delete
         await commentDelete(commentIdx, req.userData);
     }catch(err){
-        if(!err.auth){
-            //set result ( no auth )
-            result.success = false;
-            result.auth = false;
-            result.code = 401;
-        }else if(!err.status === 404){
-            console.log(err);
-
-            //set result (error)
-            result.success = false;
-            result.code = 500;
-            result.auth = true;
-        }
+        console.log(err);
+            
+        result.message = err.message;
+        statusCode = err.code;
     }
-    res.send(result);
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 module.exports = router;

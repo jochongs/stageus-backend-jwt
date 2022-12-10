@@ -4,9 +4,7 @@ window.onload = async () => {
     
     //request login auth
     const response = await fetch('/session');
-    const result = await response.json();
-
-    if(result.success){
+    if(response.status === 200){
         document.querySelector('.nav_login_btn').classList.add('hidden');
         document.querySelector('.nav_logout_btn').classList.remove('hidden');
     }else{
@@ -18,9 +16,10 @@ window.onload = async () => {
 //로그인 상태와 사용자의 아이디를 가져오는 함수
 const checkLoginState = async () => {
     const response = await fetch('/session');
-    const result = await response.json();
     
-    if(result.state){ //로그인을 한 경우
+    if(response.status === 200){
+        const result = await response.json();
+
         //로그인 버튼 생성
         document.querySelector('.nav_login_btn').classList.add('hidden');
 
@@ -32,9 +31,9 @@ const checkLoginState = async () => {
         userInfoBtn.classList.remove('hidden');
         const img = userInfoBtn.querySelector('img');
         img.classList.remove('hidden');
-        userInfoBtn.innerText = result.id;
+        userInfoBtn.innerText = result.data.id;
         userInfoBtn.append(img);
-    }else{ //로그인이 되지 않았을 경우
+    }else{
         //로그인 버튼 생성
         document.querySelector('.nav_login_btn').classList.remove('hidden');
 
@@ -54,11 +53,10 @@ const getAccountData = async ()=>{
 
     //request
     const response = await fetch(`/account/${userId}`);
-    const result = await response.json();
 
-    console.log(result);
+    if(response.status === 200){
+        const result = await response.json();
 
-    if(result.success){
         //DB값 가져오기
         const data = result.data[0];
         const id = data.id;
@@ -74,13 +72,10 @@ const getAccountData = async ()=>{
         profileIdDiv.innerText = id;
         profileNameDiv.innerText = name;
         profileNicknameDiv.innerText = nickname;
-    }else{
-        if(!result.auth){
-            alert("권한이 없습니다.");
-            location.href = '/page/login';
-        }else{
-            location.href = '/page/error';
-        }
+    }else if(response.status === 401){
+        location.href = '/page/login';
+    }else if(response.status === 403){
+        alert('권한이 없습니다.');
     }
 }
 

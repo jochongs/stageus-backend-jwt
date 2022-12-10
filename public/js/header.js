@@ -4,14 +4,12 @@ const clickLogoutBtnEvent = async ()=>{
     const response = await fetch('/session', {
         method : "DELETE"
     })
-    const result = await response.json();
 
     //check result
-    if(result.success){
+    if(response.status === 200){
         location.href = '/';
-    }else{
-        alert('로그아웃에 실패했습니다.');
-        location.reload();
+    }else if(response.status === 401){
+        alert('이미 로그아웃 되어있습니다.');
     }
 }
 
@@ -19,10 +17,15 @@ const clickLogoutBtnEvent = async ()=>{
 const clickUserInfoBtnEvent = async ()=>{
     //request login auth 
     const response = await fetch('/session');
-    const result = await response.json();
-
-    console.log(result);
-    location.href = `/page/account/${result.id}`;
+    
+    if(response.status === 200){
+        const result = await response.json();
+        location.href = `/page/account/${result.data.id}`;
+    }else if(response.status === 401){
+        location.href = '/page/login';
+    }else if(response.status === 403){
+        alert('접근 권한이 없습니다.');
+    }
 }
 
 //알림 버튼 클릭 이벤트
