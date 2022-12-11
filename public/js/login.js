@@ -1,10 +1,8 @@
 window.onload = async () => {
     //auth요청
     const response = await fetch('/auth');
-    const result = await response.json();
-
-    if(result.success){
-        localStorage.setItem('token', result.token);
+    
+    if(response.status === 200){
         location.href = '/';
     }
 }

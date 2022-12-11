@@ -72,21 +72,18 @@ router.get('/google/callback', passport.authenticate('google', { failureRedirect
 
 router.get('/', (req, res) => {
     //FE로 보낼 data
-    const result = {
-        success : false,
-        auth : true,
-        code : 200,
-    }
+    const result = {};
+    let statusCode = 200;
 
-    //data check
+    
     if(req.session.passport !== undefined){
-        //user data
+        //prepare data
         const id = req.session.passport.user.id;
         const name = req.session.passport.user.name;
         const nickname = req.session.passport.user.nickname;
         const authority = req.session.passport.user.authority;
 
-        //prepare data
+        //set token
         const token = jwt.sign(
             {
                 id : id,
@@ -107,20 +104,20 @@ router.get('/', (req, res) => {
         //login count
         loginCount(id);
 
-        //send result
-        result.success = true;
-        res.send(result);
-
         //destroy session
         req.session.destroy((err) => {
             if(err){
                 console.log(err);
             }
         })
+
+        //응답
+        res.status(statusCode).send(result);
     }else{
-        //send result
-        result.auth = false;
-        res.send(result);
+        statusCode = 401;
+
+        //응답
+        res.status(statusCode).send(result);
     }
 });
 

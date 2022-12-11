@@ -5,15 +5,10 @@ router.get('/', async (req, res) => {
     //prepare data
     const date = new Date();
     date.setHours(date.getHours() + 9);
-    const today = `${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}`;
 
     //FE로 보내줄 데이터
-    const result = {
-        success : true,
-        data : 0,
-        auth : true,
-        code : 200
-    }
+    const result = {};
+    let statusCode = 200;
 
     try{
         //connect redis
@@ -24,17 +19,14 @@ router.get('/', async (req, res) => {
 
         //disconnect redis
         await redis.disconnect();
-        
-        //send reuslt
-        res.send(result);
     }catch(err){
         console.log(err);
         
-        //send result( error )
-        result.success = false;
-        result.code = 500;
-        res.send(result);
+        statusCode = 409;
     }
+
+    //응답
+    res.status(statusCode).send(result);  
 })
 
 module.exports = router;

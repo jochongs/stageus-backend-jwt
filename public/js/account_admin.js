@@ -53,13 +53,6 @@ const requestLog = async (itemRemoveOption=true, page=0) => {
             queryString += `&order=${order}`;
         }
     }
-    // if(only.length !== 0){
-    //     if(queryString.length === 0){
-    //         queryString = `only=${only}`;
-    //     }else{
-    //         queryString += `&only=${only}`;
-    //     }
-    // }
     if(page !== 0 ){
         if(queryString.length === 0){
             queryString = `page=${page}`;
@@ -69,14 +62,14 @@ const requestLog = async (itemRemoveOption=true, page=0) => {
     }
 
     //서버에 요청
-    const request = await fetch(`/log/all?${queryString}`);
-    const result = await request.json();
-
-    console.log(result);
-
-    if(result.success){
+    const response = await fetch(`/log/all?${queryString}`);
+    if(response.status === 200){
+        const result = await response.json();
+        console.log(result);
         addLogData(result.data);
-    }else if(!result.auth){
+    }else if(response.status === 401){
+        location.href = '/page/login';
+    }else if(response.status === 403){
         alert('권한이 없습니다.');
     }
 }
@@ -147,8 +140,6 @@ const addLogData = (logDataArray)=>{
             const itemHeader = e.currentTarget;
             itemHeader.parentElement.querySelector('.log_item_main_container').classList.toggle('hidden');
         })
-
-
 
         //req title container
         const reqTitleContainer = document.createElement('div');

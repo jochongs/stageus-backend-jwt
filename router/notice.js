@@ -9,59 +9,48 @@ router.get('/:userId', loginAuth, async (req, res) => {
     const userId = req.userData.id;
 
     //FE로 보낼 데이터
-    const result = {
-        success : true,
-        code : 200,
-        auth : true,
-        data : []
-    }
+    const result = {};
+    let statusCode = noticeUserId === userId ? 200 : 403;
 
     //auth check
     if(noticeUserId !== userId){
-        //send reuslt
-        result.success = false;
-        result.code = 200,
-        result.auth = false;
-        res.send(result);
-
-        return;
+        statusCode === 403;
     }
 
-    try{
-        //connect redis
-        await redis.connect();
-
-        //get notice
-        const noticeArray = await redis.keys(`notice-${userId}-*`);
-
-        for(let i = 0; i < noticeArray.length; i++){
-            const notice = noticeArray[i];
-            
-            //get notice data
-            const noticeData = await redis.hGetAll(notice);
-
-            result.data.push(noticeData);
-        }
-
-        //disconnect redis
-        await redis.disconnect();
-
-        //send result
-        res.send(result);
-    }catch(err){
-        console.log(err);
-
-        //check redis is opened
-        if(redis.isOpen){
+    if(statusCode === 200){
+        try{
+            //connect redis
+            await redis.connect();
+    
+            //get notice
+            const noticeArray = await redis.keys(`notice-${userId}-*`);
+            result.data = [];
+    
+            for(let i = 0; i < noticeArray.length; i++){
+                const notice = noticeArray[i];
+                
+                //get notice data
+                const noticeData = await redis.hGetAll(notice);
+    
+                result.data.push(noticeData);
+            }
+    
             //disconnect redis
             await redis.disconnect();
+        }catch(err){
+            console.log(err);
+    
+            //disconnect
+            if(redis.isOpen){
+                await redis.disconnect();
+            }
+    
+            statusCode = 409;
         }
-
-        //send result
-        result.success = false;
-        result.code = 500;
-        res.send(result);
     }
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 router.delete('/:noticeIdx', loginAuth, async (req, res) => {
@@ -69,20 +58,10 @@ router.delete('/:noticeIdx', loginAuth, async (req, res) => {
     const loginUserId = req.userData.id;
     const noticeIdx = req.params.noticeIdx;
     const noticeUserId = req.query.userId;
-    const noticeArray = [];
-
-    noticeArray.push({
-        id : loginUserId,
-        noticeIdx : noticeIdx
-    })
 
     //FE로 보낼 데이터
-    const result = {
-        success : true,
-        code : 200,
-        auth : true
-    }
-
+    const result = {};
+    let statusCode = 200;
 
     //auth check
     if(loginUserId === noticeUserId){
@@ -91,34 +70,23 @@ router.delete('/:noticeIdx', loginAuth, async (req, res) => {
             await redis.connect();
     
             //delete notice
-            for(let i = 0; i < noticeArray.length; i++){
-                //prepare data
-                const notice = noticeArray[i];
-                const noticeIdx = notice.noticeIdx;
-                const userId = notice.id;
-                
-                const deleteState = await redis.del(`notice-${userId}-${noticeIdx}`);
-            }
+            await redis.del(`notice-${loginUserId}-${noticeIdx}`);
 
             //redis disconnect
             await redis.disconnect();
-    
-            //send result ( success )
-            res.send(result);
         }catch(err){
             console.log(err);
 
-            //send result ( server error )
-            result.success = false;
-            result.code = 500;
-            res.send(result);
+            result.message = 'unexpected error occurd';
+            statusCode = 409;
         }
     }else{
-        //send result ( no auth )
-        result.success = false;
-        result.auth = false;
-        res.send(result);
+        result.message = 'no auth';
+        statusCode = 403;
     }
+
+    //응답
+    res.status(statusCode).send(result);
 })
 
 module.exports = router;

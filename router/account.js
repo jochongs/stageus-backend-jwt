@@ -8,64 +8,6 @@ const SECRET_KEY = require('../config/jwt_secret_key');
 const { accountGet, accountModify, accountAdd } = require('../module/account_control');
 
 //api ===============================================================================
-//모든 계정 데이터를 가져오는 API (사용하지 않음)
-router.get('/all', async (req, res) => {
-    //FE로 받은 데이터
-    const token = req.signedCookies.token;
-
-    //FE로 보낼 데이터 준비
-    const result = {
-        success : false,
-        data : [],
-        auth : false,
-        code : 200
-    }
-
-    try{
-        const userData = jwt.verify(token, SECRET_KEY);
-
-        //관리자만 요청 할 수 있음
-        if(userData.authority === 'admin'){
-
-            //DB연결
-            const client = new Client(pgConfig);
-            try{
-
-                await client.connect();
-
-                //SELECT
-                const sql = 'SELECT * FROM backend.account';
-                const selectData = await client.query(sql);
-                
-                //send result
-                result.success = true;
-                result.data = selectData.rows;
-                result.auth = true;
-                res.send(result);
-            }catch(err){
-
-                console.log(err);
-
-                //send result
-                result.success = false;
-                result.code = 500;
-                result.auth = true;
-                res.send(result);
-            }
-        }else{
-            throw "no auth";
-        }
-    }catch(err){
-        console.log(err);
-        
-        //send result
-        result.success = false;
-        result.code = 200;
-        result.auth = false;
-        res.send(result);
-    }
-})
-
 //회원정보 요청 api 
 router.get('/:userId', loginAuthCheck, async (req, res) => {
     //FE로 부터 받을  값
@@ -188,6 +130,7 @@ router.post('/', async (req, res) => {
     res.status(statusCode).send(result);
 })
 
+//닉네임 수정 api 사용하지 않을 예정
 router.put('/:userId', loginAuthCheck, async (req, res) => {
     //FE에서 받은 값
     const userId = req.params.userId;

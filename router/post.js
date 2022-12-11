@@ -1,9 +1,6 @@
 const router = require('express').Router();
-const { Client } = require('pg');
-const pgConfig = require('../config/pg_config');
 const loginAuth = require('../module/login_auth_check');
 const postImgUploadMiddleware = require('../module/post_img_upload');
-const s3 = require('../module/s3');
 const searchKeywordSave = require('../module/search_keyword_save');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');

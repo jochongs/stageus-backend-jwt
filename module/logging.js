@@ -1,7 +1,7 @@
 const mongodb = require('mongodb').MongoClient;
 const url = require('url');
 
-const logging = async (req,res,result) =>{
+const logging = async (req, res, result) => {
     //url 데이터 준비
     const urlObj = url.parse(req.originalUrl);
 
@@ -18,7 +18,7 @@ const logging = async (req,res,result) =>{
         result : result
     }
     const obj = {
-        userId : req.session.userId !== undefined ? req.session.userId : "",
+        userId : req.session?.userId || "",
         method : req.method,
         api : urlObj.pathname,
         queryString : urlObj.query,

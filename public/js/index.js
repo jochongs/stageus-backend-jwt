@@ -4,7 +4,7 @@ window.onload = async ()=>{
     checkLoginState();
 
     //오늘 로그인 횟수 출력
-    getLoginCount();
+    console.log(getLoginCount());
 
     document.querySelector('.board_search_form').addEventListener('submit', submitSearchKeywordEvent);
 }
@@ -135,16 +135,18 @@ const addPostItem = (postItemArray=[]) => {
 }
 
 //오늘 로그인한 회원 수 가져오는 함수
-const getLoginCount = async () => {
-    //request today total login count
-    const response = await fetch('/login-count');
-    const result = await response.json();
+const getLoginCount = () => {
+    return new Promise(async (resolve, reject) => {
+        const response = await fetch('/login-count');
 
-    if(result.success){
-        return result.data;
-    }else{
-        return -1;
-    }
+        if(response.status === 200){
+            const result = await response.json();
+            
+            resolve(result.data);
+        }else{
+            reject(false);
+        }
+    });
 }
 
 //검색 키워드를 가져오는 함수
@@ -163,12 +165,11 @@ const getSearchKeywordArray = () => {
 
 //알림 존재 여부 확인 함수
 const checkNotification = async (userId) => {
-    //request notification data
     const response = await fetch(`/notice/${userId}`);
-    const result = await response.json();
+    
+    if(response.status === 200){
+        const result = await response.json();
 
-    //check result
-    if(result.success){
         if(result.data.length !== 0){
             document.querySelector('.new_notification_logo').classList.remove('hidden');
             
@@ -224,9 +225,8 @@ const addNotification = (notificationArray) => {
             const response = await fetch(`/notice/${noticeIdx}?userId=${id}`, {
                 method : "DELETE"
             })
-            const result = await response.json();
 
-            if(result.success){
+            if(response.status === 200){
                 location.href = `/page/post/${idx}`;
             }else{
                 alert('에러가 발생했습니다.');
@@ -383,7 +383,7 @@ const focusSearchKeyworInputdEvent = async () => {
     const response = await fetch('/search-keyword');
     const result = await response.json();
 
-    if(result.success){
+    if(response.status === 200){
         addCurSearchKeyword(result.data);
     }
 }
