@@ -6,6 +6,7 @@ window.onload = async ()=>{
     //오늘 로그인 횟수 출력
     console.log(getLoginCount());
 
+    //제출 이벤트 등록
     document.querySelector('.board_search_form').addEventListener('submit', submitSearchKeywordEvent);
 }
 

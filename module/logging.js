@@ -1,3 +1,4 @@
+const elastic = require('elasticsearch');
 const mongodb = require('mongodb').MongoClient;
 const url = require('url');
 
@@ -27,6 +28,21 @@ const logging = async (req, res, result) => {
         res : resObj
     }
 
+    //엘라스틱 서치에 저장
+    try{
+        const esClient = new elastic.Client({
+            node : 'http://localhost:9200'            
+        })
+
+        await esClient.index({
+            index : 'log',
+            body : obj
+        })
+    }catch(err){
+        console.log(err);
+    }
+
+    //몽고 디비에 저장
     try{
         //INSERT
         const DB = await mongodb.connect("mongodb://localhost:27017");

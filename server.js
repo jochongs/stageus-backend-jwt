@@ -8,6 +8,7 @@ const fs = require('fs');
 const https = require('https');
 const logging = require('./module/logging');
 const cookieParser = require('cookie-parser');
+const visitHistory = require('./module/visit_history');
 
 const sessionApi = require('./router/session');
 const pagesApi = require('./router/pages');
@@ -20,6 +21,7 @@ const adminAuthCheck = require('./module/admin_auth_check');
 const loginCountApi = require('./router/login_count');
 const searchKeywordApi = require('./router/search_keyword');
 const noticeApi = require('./router/notice');
+const visitHistoryApi = require('./router/visit_history');
 //const testApi = require('./router/test');
 
 //설정 =========================================================================================================================================================
@@ -54,16 +56,17 @@ app.use((req,res,next)=>{ //로깅 미들웨어
 });
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
-app.use("/page",pagesApi);
-app.use('/account',accountApi);
-app.use('/session',sessionApi);
-app.use('/post',postApi);
-app.use('/comment',commentApi);
-app.use('/auth',authApi);
+app.use("/page", visitHistory, pagesApi);
+app.use('/account', accountApi);
+app.use('/session', sessionApi);
+app.use('/post', postApi);
+app.use('/comment', commentApi);
+app.use('/auth', authApi);
 app.use('/log', adminAuthCheck, logApi);
 app.use('/login-count', loginCountApi);
 app.use('/search-keyword', searchKeywordApi);
 app.use('/notice', noticeApi);
+app.use('/visit-history', visitHistoryApi);
 //app.use('/test',testApi);
 
 
