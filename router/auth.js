@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const GOOGLE_CONFIG = require('../config/google_config');
+const googleConfig = require('../config/google_config');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = require('../config/jwt_secret_key');
 const { Client } = require('pg');
@@ -21,9 +21,9 @@ passport.deserializeUser((user, done) => {
 passport.use(
     new GoogleStrategy(
         {
-            clientID: GOOGLE_CONFIG.web.client_id,
-            clientSecret: GOOGLE_CONFIG.web.client_secret,
-            callbackURL: GOOGLE_CONFIG.web.redirect_uris[0],
+            clientID: googleConfig.web.client_id,
+            clientSecret: googleConfig.web.client_secret,
+            callbackURL: googleConfig.web.redirect_uris[0],
         },  
         async (accessToken, refreshToken, profile, done) => {
             //prepare data
